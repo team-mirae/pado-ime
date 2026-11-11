@@ -49,7 +49,7 @@ if(WIN32)
         src/tip/registration.cpp src/tip/settings.cpp src/tip/state_shared.cpp src/tip/text_service.cpp
         src/tip/bada_windows.def ${BW_RC})
     target_include_directories(bada_windows PRIVATE src/tip include)
-    target_link_libraries(bada_windows PRIVATE bw_core ole32 oleaut32 user32 gdi32 advapi32 uuid)
+    target_link_libraries(bada_windows PRIVATE bw_core ole32 oleaut32 user32 gdi32 advapi32 shell32 uuid)
 
     # A window with a classic Edit, a RichEdit through the IMM layer and a RichEdit on TSF, for typing
     # through the installed TIP by hand or by tools/type-test.ps1; and the API reader.

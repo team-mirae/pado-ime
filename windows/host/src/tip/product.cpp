@@ -1,6 +1,8 @@
 #include "product.h"
 
 #include <objbase.h>
+#include <shellapi.h>
+#include <shlobj.h>
 
 #include <mutex>
 #include <vector>
@@ -19,6 +21,27 @@ std::wstring g_product_error;
 std::mutex g_module_mutex;
 std::unique_ptr<Module> g_module;
 bool g_module_tried = false;
+// The dictionary file's time when it was last loaded; 0: none loaded (or none there).
+ULONGLONG g_dictionary_time = 0;
+
+ULONGLONG FileTime(const std::wstring& path) {
+    WIN32_FILE_ATTRIBUTE_DATA data;
+    if (!GetFileAttributesExW(path.c_str(), GetFileExInfoStandard, &data)) return 0;
+    return (static_cast<ULONGLONG>(data.ftLastWriteTime.dwHighDateTime) << 32) | data.ftLastWriteTime.dwLowDateTime;
+}
+
+// With g_module_mutex held: (re)loads the dictionary if its file changed or went away.
+void RefreshDictionaryLocked() {
+    if (!g_module || !g_module->api().dictionary_load) return;
+    const std::wstring path = DictionaryPath();
+    if (path.empty()) return;
+    const ULONGLONG time = FileTime(path);
+    if (time == g_dictionary_time) return;
+    std::string text;
+    if (time && !ReadFile(std::filesystem::path(path), &text)) return;  // being written: next time
+    g_dictionary_time = time;
+    log::Write(L"dictionary: %s", Wide(g_module->LoadDictionary(text)).c_str());  // "": cleared
+}
 
 void LoadProduct() {
     const std::wstring dir = ModuleDirectory();
@@ -57,17 +80,8 @@ void LoadModule() {
         return;
     }
     log::Write(L"engine loaded in %llu ms", GetTickCount64() - start);
-    // The user dictionary (P_dictionary_load), if the engine takes one and the user has one.
-    if (module->api().dictionary_load) {
-        wchar_t path[MAX_PATH];
-        const std::wstring pattern = L"%APPDATA%\\bada-windows\\" + product->key_name + L"\\dictionary.json";
-        std::string text;
-        if (ExpandEnvironmentStringsW(pattern.c_str(), path, MAX_PATH) &&
-            ReadFile(std::filesystem::path(path), &text)) {
-            log::Write(L"dictionary: %s", Wide(module->LoadDictionary(text)).c_str());
-        }
-    }
     g_module = std::move(module);
+    RefreshDictionaryLocked();
 }
 
 }  // namespace
@@ -127,6 +141,41 @@ void ReleaseSharedModule() {
     std::lock_guard<std::mutex> lock(g_module_mutex);
     g_module.reset();
     g_module_tried = false;
+    g_dictionary_time = 0;
+}
+
+std::wstring DictionaryPath() {
+    const Product* product = GetProduct();
+    if (!product) return {};
+    const std::wstring pattern = L"%APPDATA%\\bada-windows\\" + product->key_name + L"\\dictionary.json";
+    wchar_t path[MAX_PATH];
+    const DWORD n = ExpandEnvironmentStringsW(pattern.c_str(), path, MAX_PATH);
+    return n && n <= MAX_PATH ? std::wstring(path) : std::wstring();
+}
+
+void RefreshDictionary() {
+    // Never waits for a module still loading on the thread pool (it loads the dictionary itself).
+    std::unique_lock<std::mutex> lock(g_module_mutex, std::try_to_lock);
+    if (lock.owns_lock()) RefreshDictionaryLocked();
+}
+
+void OpenSettingsApp() {
+    const Product* product = GetProduct();
+    if (!product || product->manifest.settings_app.empty()) return;
+    const std::filesystem::path app = product->manifest.root / PathFromUtf8(product->manifest.settings_app);
+    const HINSTANCE result = ShellExecuteW(nullptr, L"open", app.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+    if (reinterpret_cast<INT_PTR>(result) <= 32) {
+        log::Write(L"can't start %s (%d)", app.c_str(), static_cast<int>(reinterpret_cast<INT_PTR>(result)));
+    }
+}
+
+void OpenDictionaryFolder() {
+    const std::wstring path = DictionaryPath();
+    const size_t slash = path.find_last_of(L'\\');
+    if (slash == std::wstring::npos) return;
+    const std::wstring folder = path.substr(0, slash);
+    SHCreateDirectoryExW(nullptr, folder.c_str(), nullptr);
+    ShellExecuteW(nullptr, L"open", folder.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 }
 
 }  // namespace bw

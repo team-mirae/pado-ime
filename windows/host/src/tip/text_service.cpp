@@ -46,6 +46,8 @@ enum MenuId : UINT {
     kMenuPublish,
     kMenuLog,
     kMenuAbout,
+    kMenuSettings,
+    kMenuDictionaryFolder,
 };
 
 bool Down(int vk) { return (GetKeyState(vk) & 0x8000) != 0; }
@@ -265,6 +267,7 @@ bool TextService::EnsureEngine() {
 }
 
 void TextService::ApplySettings(bool force) {
+    RefreshDictionary();  // a changed dictionary.json loads at the next focus change, settings or not
     const unsigned long version = settings::Version();
     if (!force && applied_version_ == version) return;
     applied_version_ = version;
@@ -888,6 +891,9 @@ void TextService::InitMenu(ITfMenu* menu) {
     add(menu, kMenuLog, L"Diagnostic Log", settings::ReadDword(L"DiagnosticLog", 0) != 0);
     separator(menu);
     const Product* product = GetProduct();
+    if (product && !product->manifest.settings_app.empty()) add(menu, kMenuSettings, L"Settings…", false);
+    // (Not asking the module whether it takes a dictionary: that would wait for it to load.)
+    if (product) add(menu, kMenuDictionaryFolder, L"Open Dictionary Folder", false);
     std::wstring about = (product ? product->display_name : L"") + L", bada-windows " + Wide(BW_VERSION);
     add(menu, kMenuAbout, about, false, false);
 }
@@ -931,6 +937,12 @@ void TextService::OnMenu(UINT id) {
         return;
     } else if (id == kMenuLog) {
         settings::WriteDword(L"DiagnosticLog", settings::ReadDword(L"DiagnosticLog", 0) ? 0 : 1);
+        return;
+    } else if (id == kMenuSettings) {
+        OpenSettingsApp();
+        return;
+    } else if (id == kMenuDictionaryFolder) {
+        OpenDictionaryFolder();
         return;
     } else {
         return;

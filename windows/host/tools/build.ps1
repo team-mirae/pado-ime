@@ -36,8 +36,10 @@ foreach ($a in $Arch) {
 
     $build = "build/$a"
     # The core tests type through shout; another engine gets only the engine-free tests.
+    # (Another engine: no argument at all. PowerShell 5.1 doesn't pass an empty one on.)
     $shout = if ($manifest.prefix -eq 'shout') { $engine.FullName } else { '' }
-    & "$PSScriptRoot\dev.ps1" -Arch $a -Command "cmake --preset $a -B $build -DBW_SHOUT_LIB='$shout' | Out-Null; if (`$LASTEXITCODE) { exit 1 }; cmake --build $build; if (`$LASTEXITCODE) { exit 1 }; & '$build\bw_core_tests.exe' '$shout'"
+    $testArg = if ($shout) { " '$shout'" } else { '' }
+    & "$PSScriptRoot\dev.ps1" -Arch $a -Command "cmake --preset $a -B $build -DBW_SHOUT_LIB='$shout' | Out-Null; if (`$LASTEXITCODE) { exit 1 }; cmake --build $build; if (`$LASTEXITCODE) { exit 1 }; & '$build\bw_core_tests.exe'$testArg"
     if ($LASTEXITCODE) { throw "build or tests failed for $a" }
 
     New-Item "$out\$a" -ItemType Directory -Force | Out-Null

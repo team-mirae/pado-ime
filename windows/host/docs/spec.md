@@ -62,6 +62,7 @@ superkeyboard's manifest (`team-mirae/superkeyboard`, `docs/ime-contract.md` §8
 | `windows.display_name` | `name` | The name in Windows' language list and the indicator |
 | `windows.labels` | `{"henkan": "あ", "muhenkan": "A"}` | The indicator's text per mode |
 | `windows.icon` | the DLL's | An `.ico` for the language list |
+| `windows.settings_app` | none | A program (relative to `root`) the menu's **Settings…** starts: an IME's own settings window |
 
 Make new GUIDs for a new IME: `[guid]::NewGuid()` in PowerShell, twice.
 
@@ -222,7 +223,9 @@ menu writes them; programs pick a change up at their next focus change (`Setting
 | `SettingsVersion` | DWORD | | changes with every write from the menu |
 
 The user dictionary, for engines with `P_dictionary_load`: `%APPDATA%\bada-windows\<name>\dictionary.json`,
-read once per process when the engine loads.
+read when the engine loads, and again at a focus change after the file changed or went away (its
+time is compared; removed: the dictionary is cleared). The menu's **Open Dictionary Folder** opens its
+folder.
 
 ## 10. Open questions
 

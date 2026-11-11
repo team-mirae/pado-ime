@@ -46,6 +46,7 @@ struct Manifest {
     std::string label_henkan = "\xE3\x81\x82";  // あ
     std::string label_muhenkan = "A";
     std::string icon;  // an .ico file (relative to root); default: the DLL's own icon
+    std::string settings_app;  // a program (relative to root) the menu's Settings… starts; empty: no item
 };
 
 std::optional<Manifest> ParseManifest(std::string_view text, const std::filesystem::path& manifest_dir,

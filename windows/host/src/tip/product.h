@@ -37,4 +37,14 @@ void PreloadModule();
 const Module* SharedModule();
 void ReleaseSharedModule();
 
+// The user dictionary (P_dictionary_load): %APPDATA%\bada-windows\<name>\dictionary.json. Loaded
+// with the module, and again by RefreshDictionary when the file changed (or went away) since: one
+// file time compared, cheap enough for every focus change. Does nothing until the module is loaded.
+std::wstring DictionaryPath();
+void RefreshDictionary();
+
+// The menu's Settings… (the manifest's windows.settings_app) and Open Dictionary Folder.
+void OpenSettingsApp();
+void OpenDictionaryFolder();
+
 }  // namespace bw

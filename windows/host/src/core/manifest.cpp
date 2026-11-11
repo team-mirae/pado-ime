@@ -201,6 +201,7 @@ std::optional<Manifest> ParseManifest(std::string_view text, const fs::path& man
         m.label_muhenkan = labels->GetString("muhenkan", m.label_muhenkan);
     }
     m.icon = w->GetString("icon");
+    m.settings_app = w->GetString("settings_app");
     return m;
 }
 
