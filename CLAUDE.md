@@ -4,7 +4,7 @@
   the macOS shell (`mac/`) removed and a TSF input method in its place. Names: pado (lowercase), パド
   (katakana), 파도. The layouts keep bada's names (bada, bada roman); the engine and its C ABI stay
   `bada` (`bada_*`).
-- Source of truth: bada's `docs/spec.md` and `docs/bada-layout.md` for behaviour, and
+- Source of truth: bada's `docs/spec.md` and `docs/layouts/13-bada.md` for behaviour, and
   [docs/windows.md](docs/windows.md) for what pado does on Windows (where it differs from the Mac).
   If code and docs disagree, the docs win or are updated in the same change. Don't implement
   **[decide]** items silently.
@@ -32,6 +32,6 @@
 - `windows/tools/make-icon.py`: `docs/images/icon/pado-icon.svg` → PNGs and `windows/pado/pado.ico`.
 - Engine: `cargo test` in `engine/` (bada's tests). The typing robot: `cargo test --release --test robot`
   (docs/robot.md; CI: `.github/workflows/robot.yml`).
-- Engine data and the analysis tools: as bada's (docs/bada-history.md §9 and the build scripts in
+- Engine data and the analysis tools: as bada's (docs/layouts/13-bada.md §H9 and the build scripts in
   `engine/tools/`); regenerate them upstream.
 - Web simulator (`web/`): bada's, `node web/build.mjs`. pado doesn't deploy it.
