@@ -1,0 +1,37 @@
+{
+  "name": "pado",
+  "description": "pado ime (파도 입력기 · パドIME): bada ime's engine on Windows. Muhenkan types QWERTY; henkan types every enabled layout at once and ranks the readings. Settings: pado-settings.exe (the indicator's menu → Settings…).",
+  "library": "{arch}/pado_engine.dll",
+  "prefix": "bada",
+  "data": [
+    "data/ko-words.tsv",
+    "data/en-words.txt",
+    "data/hanja.tsv",
+    "data/oecd.tsv",
+    "data/ja-words.txt",
+    "data/kanji.bin",
+    "data/ko-jamo-4gram.bin",
+    "data/symbols.tsv",
+    "data/emoji.tsv",
+    "data/unicode-names.tsv",
+    { "concat": [
+      "data/en-ko/common.tsv",
+      { "text": "#! brands\n" },
+      { "dir": "data/en-ko/brands", "suffix": ".tsv" },
+      { "text": "#! order\n" },
+      "data/en-ko/shared-order.tsv"
+    ] }
+  ],
+  "settings": {},
+  "mode": "muhenkan",
+  "keyboard": "jis",
+  "windows": {
+    "display_name": "pado ime",
+    "clsid": "{27FE1FE4-13A1-49E8-8972-44F3A44EAE45}",
+    "profile": "{D741D926-BC7A-40EF-BDC8-F3B260FEE260}",
+    "language": "ja-JP",
+    "labels": { "henkan": "파", "muhenkan": "A" },
+    "icon": "pado.ico",
+    "settings_app": "pado-settings.exe"
+  }
+}

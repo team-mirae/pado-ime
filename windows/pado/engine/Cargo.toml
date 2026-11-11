@@ -1,0 +1,21 @@
+# bada's engine (engine/, bada-engine) as a Windows DLL: pado_engine.dll, the engine pado's ime.json
+# loads. The engine is bada ime's, unchanged; this crate only builds it as a cdylib so bada-windows
+# (windows/host) can load it at run time through its C ABI (engine/include/bada.h, prefix "bada").
+[package]
+name = "pado-engine"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+publish = false
+
+[lib]
+name = "pado_engine"
+crate-type = ["cdylib"]
+path = "src/lib.rs"
+
+[dependencies]
+bada-engine = { path = "../../../engine" }
+
+[profile.release]
+opt-level = "s"
+lto = true

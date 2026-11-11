@@ -1,0 +1,22 @@
+# pado-settings.exe: pado's settings window (docs/windows.md §Settings). A local page in an Edge app
+# window, served from this program on 127.0.0.1; settings go to the registry, where pado (the TIP)
+# reads them at the next focus change. Links bada's engine for its catalog and to check dictionaries.
+[package]
+name = "pado-settings"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+publish = false
+build = "build.rs"
+
+[[bin]]
+name = "pado-settings"
+path = "src/main.rs"
+
+[dependencies]
+bada-engine = { path = "../../engine" }
+serde_json = "1"
+
+[profile.release]
+opt-level = "s"
+lto = true

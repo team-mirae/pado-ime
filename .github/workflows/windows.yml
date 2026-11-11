@@ -1,0 +1,34 @@
+# pado on Windows: bada's engine as pado_engine.dll, bada-windows' TIP (x64 and x86) with its core
+# tests, the settings window, then pado's tests (docs/windows.md, "Testing"). Typing through the
+# installed TIP needs a desktop: not here.
+name: windows
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc, i686-pc-windows-msvc
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            windows/pado/engine -> ../../host/build/cargo
+            windows/settings -> ../host/build/cargo
+      - name: Build (x64, x86)
+        shell: powershell
+        run: windows/build.ps1
+      - name: Test
+        shell: powershell
+        run: windows/test.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pado-ime
+          path: windows/host/build/ime/pado

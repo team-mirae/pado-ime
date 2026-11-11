@@ -1,0 +1,122 @@
+# Brings bada ime (team-mirae/bada-ime, pado's upstream) and bada-windows (windows/host, a subtree)
+# downstream: each new upstream commit is merged into a branch of its own and offered as a pull
+# request (docs/windows.md, "Staying a fork"). Daily, or by hand.
+#
+# bada-ime: what pado removed stays removed (upstream changes to the Mac shell and the Mac and
+# web-deploy workflows are dropped), and pado's own README.md and CLAUDE.md win. Any other conflict
+# stops the sync and opens an issue, to merge by hand.
+#
+# Pull requests opened with GITHUB_TOKEN don't start other workflows: run "windows" on the sync branch
+# by hand (Actions → windows → Run workflow), or close and reopen the pull request.
+name: sync upstream
+
+on:
+  schedule:
+    - cron: "23 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  bada-ime:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      BRANCH: sync/bada-ime
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Merge upstream
+        id: merge
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add upstream https://github.com/team-mirae/bada-ime.git
+          git fetch --quiet upstream main
+          if git merge-base --is-ancestor upstream/main HEAD; then
+            echo "Up to date with bada-ime."; echo "changed=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          git switch -C "$BRANCH"
+          if ! git merge --no-edit --no-ff upstream/main -m "Merge bada-ime $(git rev-parse --short upstream/main)"; then
+            for f in $(git diff --name-only --diff-filter=U); do
+              case "$f" in
+                mac/*|.github/workflows/mac.yml|.github/workflows/deploy-web.yml)
+                  git rm --quiet -f -- "$f" ;;      # removed in pado: stays removed
+                README.md|CLAUDE.md)
+                  git checkout --ours -- "$f" && git add -- "$f" ;;   # pado's own
+              esac
+            done
+            # Added upstream in the removed folder, without a conflict: removed too.
+            git rm -r --quiet --ignore-unmatch -- mac .github/workflows/mac.yml .github/workflows/deploy-web.yml
+            left=$(git diff --name-only --diff-filter=U)
+            if [ -n "$left" ]; then
+              git merge --abort
+              {
+                echo "Merging team-mirae/bada-ime \`$(git rev-parse --short upstream/main)\` into pado conflicts in:"
+                echo
+                for f in $left; do echo "- \`$f\`"; done
+                echo
+                echo 'Merge it by hand: `git fetch upstream && git merge upstream/main` (docs/windows.md, "Staying a fork").'
+              } > body.md
+              title="Upstream merge needs a hand: bada-ime $(git rev-parse --short upstream/main)"
+              gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number' | grep -q . \
+                || gh issue create --title "$title" --body-file body.md
+              exit 1
+            fi
+            git commit --no-edit --quiet
+          fi
+          git rm -r --quiet --ignore-unmatch -- mac .github/workflows/mac.yml .github/workflows/deploy-web.yml
+          git diff --cached --quiet || git commit --quiet -m "Keep the Mac shell out (pado)"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+      - name: Pull request
+        if: steps.merge.outputs.changed == 'true'
+        run: |
+          git push --force origin "$BRANCH"
+          if [ -z "$(gh pr list --head "$BRANCH" --state open --json number --jq '.[].number')" ]; then
+            gh pr create --head "$BRANCH" --base "${{ github.event.repository.default_branch }}" \
+              --title "Sync with bada-ime" \
+              --body "New work from [team-mirae/bada-ime](https://github.com/team-mirae/bada-ime), merged by \`.github/workflows/sync-upstream.yml\`. Changes to the Mac shell are left out. Run the **windows** workflow on \`$BRANCH\` before merging."
+          fi
+
+  bada-windows:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      BRANCH: sync/bada-windows
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Subtree pull
+        id: pull
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -C "$BRANCH"
+          before=$(git rev-parse HEAD)
+          if ! git subtree pull --prefix=windows/host https://github.com/team-mirae/bada-windows.git main --squash \
+                 -m "Merge bada-windows into windows/host"; then
+            git merge --abort || true
+            title="Upstream merge needs a hand: bada-windows"
+            gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number' | grep -q . \
+              || gh issue create --title "$title" --body 'The subtree pull of team-mirae/bada-windows into `windows/host` conflicts. Pull it by hand: `git subtree pull --prefix=windows/host https://github.com/team-mirae/bada-windows.git main --squash` (docs/windows.md, "Staying a fork").'
+            exit 1
+          fi
+          if [ "$(git rev-parse HEAD)" = "$before" ]; then
+            echo "Up to date with bada-windows."; echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Pull request
+        if: steps.pull.outputs.changed == 'true'
+        run: |
+          git push --force origin "$BRANCH"
+          if [ -z "$(gh pr list --head "$BRANCH" --state open --json number --jq '.[].number')" ]; then
+            gh pr create --head "$BRANCH" --base "${{ github.event.repository.default_branch }}" \
+              --title "Sync with bada-windows" \
+              --body "New work from [team-mirae/bada-windows](https://github.com/team-mirae/bada-windows) in \`windows/host\`, pulled by \`.github/workflows/sync-upstream.yml\`. Run the **windows** workflow on \`$BRANCH\` before merging."
+          fi

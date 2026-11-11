@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <title>pado ime</title>
+  <!-- bada's icon (bada-icon.svg), same sky, sea and keycap colours. bada is one spacebar cruising under
+       the surface; pado (파도, a wave) is four 1u keys in a swell: one floating, one sinking, two under. -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f4faff"/>
+      <stop offset="1" stop-color="#a6d5f2"/>
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1273bf"/>
+      <stop offset="0.35" stop-color="#0a4f92"/>
+      <stop offset="0.75" stop-color="#062e62"/>
+      <stop offset="1" stop-color="#03183a"/>
+    </linearGradient>
+    <linearGradient id="ray" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="side" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f2774f"/>
+      <stop offset="1" stop-color="#b8432a"/>
+    </linearGradient>
+    <linearGradient id="top" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffb089"/>
+      <stop offset="1" stop-color="#ff8a5c"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#3fa2e8" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#3fa2e8" stop-opacity="0"/>
+    </radialGradient>
+    <!-- the swell: one big wave, its crest left of centre -->
+    <path id="surface" d="M0 392C70 330 150 262 250 262S410 340 512 372S700 404 800 360S950 300 1024 318"/>
+    <clipPath id="water"><path d="M0 392C70 330 150 262 250 262S410 340 512 372S700 404 800 360S950 300 1024 318V1024H0Z"/></clipPath>
+    <clipPath id="tile"><rect width="1024" height="1024" rx="228"/></clipPath>
+    <!-- a 1u keycap (u = 180), centred on 0,0: its sides, then its top -->
+    <g id="cap">
+      <rect x="-90" y="-90" width="180" height="180" rx="34" fill="url(#side)"/>
+      <rect x="-68" y="-84" width="136" height="132" rx="26" fill="url(#top)"/>
+    </g>
+    <rect id="cap-shape" x="-90" y="-90" width="180" height="180" rx="34"/>
+  </defs>
+
+  <g clip-path="url(#tile)">
+    <rect width="1024" height="1024" fill="url(#sky)"/>
+    <path d="M0 392C70 330 150 262 250 262S410 340 512 372S700 404 800 360S950 300 1024 318V1024H0Z" fill="url(#sea)"/>
+
+    <!-- light from the surface, clipped to the water -->
+    <g clip-path="url(#water)">
+      <path d="M170 200L250 200L110 1024L-70 1024Z" fill="url(#ray)"/>
+      <path d="M470 200L540 200L520 1024L360 1024Z" fill="url(#ray)" opacity="0.8"/>
+      <path d="M790 200L860 200L1000 1024L840 1024Z" fill="url(#ray)" opacity="0.7"/>
+    </g>
+
+    <!-- the deepest key, far down and fading -->
+    <g transform="translate(330 812) rotate(-28)" opacity="0.92">
+      <ellipse rx="190" ry="150" fill="url(#glow)"/>
+      <use href="#cap" xlink:href="#cap"/>
+    </g>
+    <!-- a key just gone under -->
+    <g transform="translate(742 596) rotate(22)">
+      <ellipse rx="210" ry="170" fill="url(#glow)"/>
+      <use href="#cap" xlink:href="#cap"/>
+    </g>
+    <!-- a key sinking, half through the surface -->
+    <g transform="translate(560 388) rotate(-34)">
+      <use href="#cap" xlink:href="#cap"/>
+    </g>
+    <!-- a key floating on the crest -->
+    <g transform="translate(232 214) rotate(11)">
+      <use href="#cap" xlink:href="#cap"/>
+    </g>
+
+    <!-- the water over everything under the surface: what's in it is tinted, the deeper the more -->
+    <g clip-path="url(#water)" fill="#2a8fdc">
+      <use href="#cap-shape" xlink:href="#cap-shape" transform="translate(232 214) rotate(11)" opacity="0.3"/>
+      <use href="#cap-shape" xlink:href="#cap-shape" transform="translate(560 388) rotate(-34)" opacity="0.3"/>
+      <use href="#cap-shape" xlink:href="#cap-shape" transform="translate(742 596) rotate(22)" opacity="0.34"/>
+      <use href="#cap-shape" xlink:href="#cap-shape" transform="translate(330 812) rotate(-28)" opacity="0.55"/>
+    </g>
+
+    <!-- the surface line, over the keys it crosses -->
+    <use href="#surface" xlink:href="#surface" fill="none" stroke="#ffffff" stroke-width="22" stroke-linecap="round"/>
+    <!-- spray off the crest -->
+    <g fill="#ffffff" opacity="0.85">
+      <circle cx="372" cy="262" r="9"/>
+      <circle cx="400" cy="236" r="6"/>
+      <circle cx="104" cy="276" r="7"/>
+    </g>
+
+    <!-- bubbles from the sinking key, and from the one under it -->
+    <g fill="none" stroke="#ffffff" stroke-width="7" opacity="0.7">
+      <circle cx="676" cy="470" r="15"/>
+      <circle cx="706" cy="430" r="10"/>
+      <circle cx="684" cy="404" r="7"/>
+      <circle cx="604" cy="660" r="12"/>
+      <circle cx="586" cy="620" r="8"/>
+    </g>
+    <g fill="#ffffff" opacity="0.5">
+      <circle cx="724" cy="470" r="5"/>
+      <circle cx="560" cy="700" r="4"/>
+      <circle cx="470" cy="760" r="4"/>
+    </g>
+
+    <!-- the deep -->
+    <path d="M0 930C140 910 280 916 420 932S700 950 840 930S980 914 1024 920" fill="none"
+          stroke="#ffffff" stroke-width="8" stroke-linecap="round" opacity="0.12"/>
+  </g>
+</svg>

@@ -1,190 +1,153 @@
 ### <br>
 
 <p align="center">
-  <img src="docs/images/icon/bada-icon.svg" width="96" height="96" alt="bada ime icon">
+  <img src="docs/images/icon/pado-icon.svg" width="96" height="96" alt="pado ime icon">
 
   <h3 align="center">
-	바다 입력기 · バダIME
+	파도 입력기 · パドIME
   </h3>
 
   <p align="center">
-	An input method for multilinguals.
+	An input method for multilinguals, on Windows.
   </p>
 </p>
 
 ### <br>
 
+**pado ime** is [bada ime](https://github.com/team-mirae/bada-ime) on Windows. It's a fork of bada ime
+with the macOS shell taken out and a Windows (TSF) input method in its place, hosted by
+[bada-windows](https://github.com/team-mirae/bada-windows). The engine, the layouts and every feature
+are bada's, and bada's updates come downstream (see [Staying a fork](docs/windows.md#staying-a-fork)).
+
+The name is the same idea: bada (바다) is the sea, pado (파도) is a wave on it. The layouts keep their
+names: **bada** (13) and **bada roman** (15).
+
 ### Why this was built
 
-Multilingual typing is an afterthought in most IMEs. Even JIS,
-which has 4 keys dedicated to language actions, does not take
-into account that the user may want to type a language other
-than English or Japanese.
+Multilingual typing is an afterthought in most IMEs. Even JIS, which has keys dedicated to language
+actions, does not take into account that the user may want to type a language other than English or
+Japanese.
 
-In bada, multilingual typing is why the IME exists at all.
+In bada, and so in pado, multilingual typing is why the IME exists at all.
 
-There are two modes: **muhenkan** and **henkan**. This is exactly
-the same as in Japanese keyboards. However, the **henkan** mode,
-which is entered using **かな**, types every single candidate language
-you have setup simultaneously, then ranks them and shows you candidates.
+There are two modes: **muhenkan** and **henkan**, as on Japanese keyboards. Henkan mode, entered with
+**変換**, types every candidate layout you've set up at the same time, ranks the readings and shows you
+the candidates.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/layouts/qwerty-bada-kana-dark.png">
   <img src="docs/images/layouts/qwerty-bada-kana-light.png" alt="QWERTY, bada and kana on one HHKB JIS keyboard">
 </picture>
 
-This example demonstrates QWERTY (0), bada (13), and Japanese Kana (20)
-all typed in **henkan** mode. Thus, `3`, `u`, `q` produce candidates
-`3uq` (QWERTY), `쪄ㅃ` (bada), `あなた` (kana) at the same time, and ranks
-them. Obviously here only Japanese produces a legible phrase, so Japanese would
-rank first.
+QWERTY (0), bada (13) and Japanese Kana (20) all typed in henkan mode: `3`, `u`, `q` give `3uq`
+(QWERTY), `쪄ㅃ` (bada) and `あなた` (kana) at the same time, ranked. Only the Japanese is a legible
+phrase, so it ranks first.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/layouts/qwerty-bada-roman-kana-dark.png">
   <img src="docs/images/layouts/qwerty-bada-roman-kana-light.png" alt="QWERTY, bada roman and kana on one HHKB JIS keyboard">
 </picture>
 
-This example demonstrates QWERTY (0), bada roman (15), and Japanese Kana (20).
-`g`, `w`, `i`, `h`, `a` produce candidates `gwiha` (QWERTY), `귀하` (bada roman),
-`きてにくた` (kana). Obviously here Korean makes the most sense, so Korean is ranked first.
+QWERTY (0), bada roman (15) and Japanese Kana (20): `g`, `w`, `i`, `h`, `a` give `gwiha` (QWERTY),
+`귀하` (bada roman) and `きてにくた` (kana). Korean makes the most sense, so it ranks first.
 
-[**Try it out!**](https://bada.sjun.me/)
+[**Try bada in a browser**](https://bada.sjun.me/): the same engine.
 
 ### bada
 
-How was bada(13) designed? Its main consideration was that your wrists would never
-have to move. All movement is done by your fingers, either moving up/down or left/right.
-This reduces strain on your hands, and makes typing more comfortable.
-
-Once you are fluent in bada typing, expect less fatigue.
-
-Do not expect faster typing. For faster typing, use 3-set unshifted (14).
-It allows NKRO typing (모아치기), which makes for incredibly fast typing.
+bada (13) was designed so that your wrists never have to move: all movement is your fingers, up and
+down or left and right. That means less strain, and once you're fluent, less fatigue. Don't expect
+faster typing; for that, use 3-set unshifted (14), which allows NKRO typing (모아치기).
 
 ### bada roman
 
-Why does bada roman(15) exist at all? It was a fluke. I (the original developer) tried
-Korean input using roman letters as an experimental joke, but it was surprisingly good.
-Seriously, even if you know Korean, give it a try.
-
-If you type primarily in English (i.e. a developer) and very rarely in Korean,
-even if you are a fluent Korean speaker, this is a very good setup.
-
-It also does not mess with your Korean 2-set (KTS) muscle memory, as you aren't memorizing
-key positions. You instead memorize which roman letters map to which Korean jamo, and
-keep your typing in QWERTY, separate from your existing memory of KTS.
+bada roman (15) types Korean with roman letters. It started as a joke and turned out surprisingly good.
+If you type mostly in English and only sometimes in Korean, it's a very good setup. It leaves your
+2-set (KTS) muscle memory alone: you learn which letters map to which jamo, not new key positions.
 
 ### How to install
 
-Download a release, or build from source.
+Build from source on Windows 10 or 11 (x64). You need Visual Studio 2022 Build Tools (C++) and Rust
+with the 32-bit target. Details in [docs/windows.md](docs/windows.md#install).
 
-The releases are signed with an Apple Development certificate, but they are not notarized.
-macOS will only run them without complaining on the developer's own Macs. Everywhere else,
-build from source. It only takes a few minutes.
-
-```sh
-git clone https://github.com/team-mirae/bada-ime
-cd bada-ime/mac
-make install
+```powershell
+git clone https://github.com/team-mirae/pado-ime; cd pado-ime
+rustup target add i686-pc-windows-msvc
+windows/build.ps1
+windows/install.ps1
 ```
 
-You need Rust and the Command Line Tools. Xcode is not needed.
-
-Then go to System Settings → Keyboard → Input Sources:
-
-1. Check that **Bada Muhenkan** and **Bada Henkan** are listed.
-2. Add **ABC – Extended**, then remove **ABC**. Now **英数** always lands in muhenkan.
-3. Remove every other Japanese input method. Now **かな** always lands in henkan.
-4. From the input menu, choose **Allow 英数 and かな Everywhere…**. Without it, **かな** can't
-   move through the candidates while you are already in henkan.
-
-Too lazy? Open a coding assistant in the cloned folder and tell it
-`Read docs/interactive-prompts/start.md and follow it.` It will install bada, set it up,
-and build your dictionary with you.
+Then pick **pado ime** with Win+Space (under 日本語), and restart apps that were running.
 
 ### How to type
 
-Type in **henkan**, and the best candidate shows as you type. **Space** commits it.
+| Key | |
+|---|---|
+| **変換** | Henkan mode. The best candidate shows as you type; **Space** commits it |
+| **Tab**, **↓**, **変換** | The next candidate. **⇧Tab**, **↑**, **⇧変換**: back |
+| **⇧Enter** | Commits what shows, and nothing else |
+| **Esc** | Commits too. It doesn't cancel, unlike most IMEs |
+| **無変換** | Muhenkan mode: plain QWERTY |
+| **カタカナ/ひらがな** | Henkan in its own profile (Settings → Profiles) |
 
-If the first candidate is wrong, press **Tab**, **↓** or **かな** to move to the next one.
-**⇧Tab**, **↑** and **⇧かな** go back. **⇧Enter** commits what shows, and nothing else.
-**Esc** commits too. It does not cancel, unlike most IMEs.
-
-**英数** goes back to **muhenkan**, which is plain QWERTY.
+The taskbar shows **파** in henkan and **A** in muhenkan. Right-click it for the menu and **Settings…**.
 
 ### Henkan profiles
 
-One henkan is not always enough. If you type Japanese and Korean a lot, you may want them on
-separate keys. Turn on Settings → Profiles, and **かな**, **変換** and **カタカナ** each get
-their own set of layouts. For example:
+One henkan is not always enough. Turn on Settings → Profiles, and **変換**, **カタカナ** and an Apple
+keyboard's **かな** each get their own set of layouts:
 
 | Key | Layouts |
 |---|---|
-| かな | QWERTY + bada roman |
-| 変換 | QWERTY + Japanese Kana |
-| カタカナ | Symbols + Unicode |
-
-Japanese PC keyboards have **変換** and **カタカナ**, but macOS ignores them. bada reads them
-anyway (it needs Input Monitoring for this): press **Record** in Settings → Profiles, then
-press the key.
-
-The developer's own setup, an HHKB with three profiles: [docs/examples/hhkb-profiles](docs/examples/hhkb-profiles/README.md).
-
-### Learn Korean
-
-Don't know Korean? [learn.sjun.me](https://learn.sjun.me) teaches you to type it, by typing:
-pick the layout you're aiming for (bada roman, 2-set or bada) and learn it from the first lesson.
-Each track ends with the national anthem. It runs on the same engine as the IME, and its MCP
-server (`https://learn.sjun.me/mcp`) teaches and quizzes you from an AI client.
+| 変換 | QWERTY + bada roman |
+| カタカナ | QWERTY + Japanese Kana |
+| かな (Apple) | Symbols + Unicode |
 
 ### Your dictionary
 
-bada ranks candidates by how common the words are. Your own words may not be common.
-Put them in `~/Library/Application Support/bada-ime/dictionary.json`, along with the words
-you never mean. The format: [docs/dictionary-contract.md](docs/dictionary-contract.md).
+pado ranks candidates by how common the words are, and your own words may not be. Put them in
+`%APPDATA%\bada-windows\pado\dictionary.json` (Settings → Dictionary, or the menu's Open Dictionary
+Folder), with the words you never mean. The format: [docs/dictionary-contract.md](docs/dictionary-contract.md).
+Settings export to the same `bada-settings/1` file as bada's on the Mac.
 
-[utils/learner-app](utils/learner-app/README.md) logs your typing and turns it into a
-dictionary.
+### Learn Korean
 
-### Layouts (ABC/가/かな)
+[learn.sjun.me](https://learn.sjun.me) teaches you to type Korean by typing: bada roman, 2-set or bada,
+from the first lesson. Same engine.
+
+### Layouts
 
 | Id | Layout | |
 |---|---|---|
 | 0 | QWERTY | muhenkan, and English in henkan |
 | 10 | Korean (2-set) | KTS, the standard Korean keyboard |
-| 13 | Korean (bada) | [docs/bada-layout.md](docs/bada-layout.md) |
-| 15 | Korean (bada roman) | [docs/layouts/15-bada-roman.md](docs/layouts/15-bada-roman.md) |
-| 20 | Japanese (Kana) | JIS kana, with kanji conversion |
-| 21 | Japanese (Romaji) | romaji, with kanji conversion |
-
-### Layouts (other)
-
-| Id | Layout | |
-|---|---|---|
 | 11 | Korean (legacy-korean) | from JIS Korean |
 | 12 | Korean (legacy-moonshot) | from JIS Moonshot |
+| 13 | Korean (bada) | [docs/bada-layout.md](docs/bada-layout.md) |
 | 14 | Korean (3-set JIS) | 세벌식 for JIS, 모아쓰기 |
+| 15 | Korean (bada roman) | [docs/layouts/15-bada-roman.md](docs/layouts/15-bada-roman.md) |
 | 18 | Korean (Roman) | Korean in romanization |
 | 19 | Korean (Kana) | Korean in kana |
+| 20 | Japanese (Kana) | JIS kana, with kanji conversion |
+| 21 | Japanese (Romaji) | romaji, with kanji conversion |
 | 150 | Symbols | symbols and emoji by name |
 | 151 | Unicode | any character by its Unicode name |
 
-Every layout and its rules: [docs/layouts](docs/layouts/README.md). The spec: [docs/spec.md](docs/spec.md).
+Every layout and its rules: [docs/layouts](docs/layouts/README.md). bada's spec: [docs/spec.md](docs/spec.md);
+what differs on Windows: [docs/windows.md](docs/windows.md).
 
 ### For developers
 
-The engine is [**bada-compatible**](https://github.com/team-mirae/bada-compatible).
-
 | Path | What |
 |---|---|
-| `engine/` | The core, in Rust. All behaviour lives here. `cargo test` |
-| `mac/` | The macOS shell, in Swift. `make` |
-| `web/` | [bada.sjun.me](https://bada.sjun.me): the engine in WebAssembly. `node web/build.mjs` |
-| `docs/` | The spec, the layouts, and their history |
+| `engine/` | bada's core, in Rust. All behaviour lives here. `cargo test` |
+| `windows/host/` | [bada-windows](https://github.com/team-mirae/bada-windows), the TSF host (a subtree) |
+| `windows/pado/` | pado's manifest and the engine as `pado_engine.dll` |
+| `windows/settings/` | `pado-settings.exe`, the settings window |
+| `web/` | [bada.sjun.me](https://bada.sjun.me): the engine in WebAssembly |
+| `docs/` | bada's spec, the layouts and their history; [windows.md](docs/windows.md) |
 | `tools/`, `utils/` | Analysis, the layout renderer, the learner app |
-
-A change to the macOS shell needs the same change in `web/src`.
 
 ### License
 
-MIT © Mirae Research
+MIT © Mirae Research. `windows/host` (bada-windows) is CC0. The data's licenses: `engine/data/LICENSE-*`.
