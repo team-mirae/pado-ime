@@ -1,0 +1,21 @@
+# shout (team-mirae/bada-compatible's example IME) as a Windows DLL: shout.dll, the engine the shout
+# example loads. The engine is bada-compatible's, unchanged, pinned to a commit; this crate only
+# builds it as a cdylib named shout. A new IME builds its own crate's cdylib instead (README.md).
+[package]
+name = "shout-windows"
+version = "0.1.0"
+edition = "2024"
+license = "CC0-1.0"
+publish = false
+
+[lib]
+name = "shout"
+crate-type = ["cdylib"]
+path = "src/lib.rs"
+
+[dependencies]
+shout-ime = { git = "https://github.com/team-mirae/bada-compatible", rev = "f00ca67" }
+
+[profile.release]
+opt-level = "s"
+lto = true

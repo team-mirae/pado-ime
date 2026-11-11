@@ -1,0 +1,16 @@
+{
+  "name": "shout",
+  "description": "shout (team-mirae/bada-compatible's example IME) on Windows: henkan mode types CAPITALS; Tab, the arrows or 変換 offer lowercase. 半角/全角 in muhenkan shouts the selection. Settings: {\"forms\": [\"upper\", \"lower\", \"title\"]}.",
+  "library": "{arch}/shout.dll",
+  "prefix": "shout",
+  "settings": { "forms": ["upper", "lower"] },
+  "mode": "henkan",
+  "keyboard": "jis",
+  "windows": {
+    "display_name": "shout (bada-windows)",
+    "clsid": "{9C0F2BF6-0B78-447E-A99D-2FBAE9E8995E}",
+    "profile": "{6750C70A-725D-4106-A831-0512EAAC336C}",
+    "language": "ja-JP",
+    "labels": { "henkan": "SH", "muhenkan": "sh" }
+  }
+}

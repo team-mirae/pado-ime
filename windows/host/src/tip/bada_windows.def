@@ -1,0 +1,13 @@
+LIBRARY bada_windows
+EXPORTS
+    DllCanUnloadNow PRIVATE
+    DllGetClassObject PRIVATE
+    DllRegisterServer PRIVATE
+    DllUnregisterServer PRIVATE
+    ; Public API v1 (include/bada_windows_api.h, docs/api.md)
+    BadaWindowsApiVersion
+    BadaWindowsQueryWindow
+    BadaWindowsQueryThread
+    BadaWindowsGetState
+    BadaWindowsGetStaged
+    BadaWindowsStateMessage
