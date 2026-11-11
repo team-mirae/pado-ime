@@ -359,11 +359,21 @@ void TestManifest() {
         CHECK_EQ(m->language, std::uint16_t{0x0411});
         CHECK_EQ(m->mode, std::string("henkan"));
         CHECK(!m->has_data);
+        CHECK(m->settings_app.empty());  // no Settings… in the menu
         const std::string lib = LibraryPath(*m).generic_string();
 #if defined(__APPLE__)
         CHECK(lib.find("/x.dylib") != std::string::npos);
 #endif
         CHECK(lib.find("{") == std::string::npos);
+    }
+    {
+        // windows.settings_app: the program the menu's Settings… starts.
+        auto s = ParseManifest(R"({"name": "x", "library": "x", "prefix": "x", "windows": {
+                                     "clsid": "{11111111-2222-3333-4444-555555555555}",
+                                     "profile": "{66666666-7777-8888-9999-AAAAAAAAAAAA}",
+                                     "settings_app": "x-settings.exe"}})",
+                               "/base", &error);
+        CHECK(s && s->settings_app == "x-settings.exe");
     }
     CHECK(!ParseManifest(R"({"name": "x", "library": "x", "prefix": "x"})", "/", &error));
     CHECK(error.find("windows") != std::string::npos);

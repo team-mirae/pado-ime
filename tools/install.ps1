@@ -31,7 +31,18 @@ $key = "HKCU:\Software\bada-windows\$($manifest.name)"
 
 function Copy-Build {
     Copy-Item "$built\ime.json" $dest -Force
-    Get-ChildItem $built -Filter '*.ico' | Copy-Item -Destination $dest -Force
+    # Everything else the IME's build put beside its manifest (an icon, data, a settings program),
+    # but the per-architecture folders, which follow.
+    foreach ($item in Get-ChildItem $built -Exclude 'x64', 'x86', 'ime.json') {
+        $target = Join-Path $dest $item.Name
+        if ($item.PSIsContainer) {
+            Copy-Item $item.FullName $dest -Recurse -Force
+        } else {
+            # A running program (the settings window) keeps its file: renamed out of the way.
+            if (Test-Path $target) { try { Remove-Item $target -Force } catch { Rename-Item $target "$($item.Name).old-$(Get-Date -f yyyyMMddHHmmssfff)" } }
+            Copy-Item $item.FullName $dest -Force
+        }
+    }
     foreach ($arch in 'x64', 'x86') {
         New-Item "$dest\$arch" -ItemType Directory -Force | Out-Null
         foreach ($file in Get-ChildItem "$built\$arch" -Filter '*.dll') {
