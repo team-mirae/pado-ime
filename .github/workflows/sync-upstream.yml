@@ -51,7 +51,7 @@ jobs:
               esac
             done
             # Added upstream in the removed folder, without a conflict: removed too.
-            git rm -r --quiet --ignore-unmatch -- mac .github/workflows/mac.yml .github/workflows/deploy-web.yml
+            git rm -r -f --quiet --ignore-unmatch -- mac .github/workflows/mac.yml .github/workflows/deploy-web.yml
             left=$(git diff --name-only --diff-filter=U)
             if [ -n "$left" ]; then
               git merge --abort
@@ -69,7 +69,7 @@ jobs:
             fi
             git commit --no-edit --quiet
           fi
-          git rm -r --quiet --ignore-unmatch -- mac .github/workflows/mac.yml .github/workflows/deploy-web.yml
+          git rm -r -f --quiet --ignore-unmatch -- mac .github/workflows/mac.yml .github/workflows/deploy-web.yml
           git diff --cached --quiet || git commit --quiet -m "Keep the Mac shell out (pado)"
           echo "changed=true" >> "$GITHUB_OUTPUT"
       - name: Pull request
