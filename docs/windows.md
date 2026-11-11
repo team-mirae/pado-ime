@@ -101,7 +101,14 @@ password fields.
 | `windows/build.ps1` | builds everything and runs bada-windows' core tests (188 checks per architecture) |
 | `windows/test.ps1` | `windows/tests/pado_tests.cpp` (the built IME loaded as the TIP loads it; QWERTY, 2-set, bada roman, kana, profiles, 半角/全角, the dictionary, typed through the host into a text field; x64 and x86) and the settings server (page, API, token and host guards) |
 | `cargo test` in `engine/` | bada's own tests (`-EngineTests` on `windows/build.ps1`); the typing robot: [robot.md](robot.md) |
-| `windows/host/tools/type-test.ps1` | typing through the installed TIP into real controls (a desktop; bada-windows' cases are shout's) |
+| `windows/sandbox.ps1` | installs the build in Windows Sandbox and runs `windows/type-test.ps1` there, without touching this PC; results in `windows/host/build/sandbox/results.txt`. `-Keep` leaves the Sandbox open to try pado by hand |
+| `windows/type-test.ps1` | types bada's layouts through the **installed** TIP into bada-windows' test window (a classic Edit, a RichEdit through the IMM layer, a RichEdit on TSF): QWERTY with JIS symbols, 2-set, Esc and 無変換 committing, bada roman, kana with ⇧Tab to hiragana, 半角/全角, profiles, Caps Lock toggle, and the API (what's staged; a password field is a security error) |
+
+Measured in Windows Sandbox (Windows 11 24H2, 2026-11-11): the install registers x64 and x86, the
+engine loads in 0.7–1.2 s per program, and 28 of the 29 cases pass. The one left (無変換 in the classic
+Edit) received no keys at all, twice, and passed in the run before: the test window wasn't in front
+for the injected keys (the Sandbox's foreground lock, which `windows/sandbox-run.ps1` lifts as far as
+it can). A case that gets no keys is tried once more. Not yet measured: by hand on a real JIS keyboard.
 
 Registering a TIP changes the system: try it in Windows Sandbox first ([windows/host/docs/testing.md](../windows/host/docs/testing.md)).
 

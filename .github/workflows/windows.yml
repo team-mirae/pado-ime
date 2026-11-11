@@ -13,7 +13,7 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-pc-windows-msvc, i686-pc-windows-msvc
@@ -28,7 +28,7 @@ jobs:
       - name: Test
         shell: powershell
         run: windows/test.ps1
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: pado-ime
           path: windows/host/build/ime/pado
