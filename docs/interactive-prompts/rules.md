@@ -36,7 +36,8 @@ needed, where it comes from, whether it needs a password or a permission, and ho
 ## 3. Ask before changing anything
 
 One change per question, saying what it changes and how to undo it: installing bada ime, input
-sources, Accessibility, login items, bada ime's settings, and writing `dictionary.json`. A change that
+sources, Accessibility, Input Monitoring, login items, bada ime's settings, and writing
+`dictionary.json`. A change that
 needs `sudo` or an administrator prompt is one the user runs: give them the command.
 
 ## 4. Everything else

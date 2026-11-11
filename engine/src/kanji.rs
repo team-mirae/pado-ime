@@ -1,8 +1,8 @@
-//! Kana-kanji conversion for the Japanese layouts (docs/japanese.md), ported from JIS Moonshot (its docs/moonshot.md §5.1).
+//! Kana-kanji conversion for the Japanese layouts (docs/spec.md §11.2), ported from JIS Moonshot (its docs/moonshot.md §5.1).
 //!
 //! A word lattice over the hiragana, searched for the cheapest paths: each word's cost plus the
 //! connection cost between neighbouring words' parts of speech (a bigram over Mozc's POS ids).
-//! The data is `predict/kanji.bin`, built from Mozc's open-source dictionary by
+//! The data is `engine/data/kanji.bin`, built from Mozc's open-source dictionary by
 //! `engine/tools/kanji/build_kanji.py` (format there). Platform-independent and allocation-bounded:
 //! input longer than [`MAX_INPUT`] kana isn't converted, and the lattice keeps a fixed beam per
 //! position, so a keystroke never costs more than a few milliseconds.
@@ -104,7 +104,7 @@ struct Node {
 }
 
 impl Kanji {
-    /// Parses `predict/kanji.bin`. Malformed data is an error, never a panic.
+    /// Parses `kanji.bin`. Malformed data is an error, never a panic.
     pub fn parse(data: &[u8]) -> Result<Kanji, BadModel> {
         let mut r = Reader { data, at: 0 };
         if r.take(4)? != b"JKKJ" || r.u32()? != 1 {
@@ -195,7 +195,7 @@ impl Kanji {
     }
 
     /// Every reading with its lowest cost (lower is more common), in byte order: for building word
-    /// lists from the dictionary (`examples/first_key.rs`).
+    /// lists from the dictionary.
     pub fn words(&self) -> impl Iterator<Item = (&str, u16)> + '_ {
         (0..self.at.len().saturating_sub(1)).filter_map(move |i| {
             let reading = std::str::from_utf8(&self.readings[self.at[i] as usize..self.at[i + 1] as usize]).ok()?;

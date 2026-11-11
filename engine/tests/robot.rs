@@ -3,8 +3,8 @@
 //! from the layout's JSON alone and reading the screen (the engine's output) as they go.
 //!
 //! A word fails if it can't be typed, if typing it needs a commit in the middle of the word (the
-//! word only comes out right as two pieces), or, for layouts that convert (18, 20, 21), if the
-//! wanted text isn't among the first `TOP` rows.
+//! word only comes out right as two pieces), or, for layouts that convert (15, 18, 19, 20, 21), if
+//! the wanted text isn't among the first `TOP` rows.
 //!
 //! Each layout claims a reliability for each language it declares (`reliability` in its JSON), and
 //! must earn it: `perfect`, every item of every corpus; `production`, every one of the language's
@@ -854,7 +854,7 @@ fn json_matches_engine() {
                     Some(Role::Lit(x)) => tok.r == "x" && x == c,
                     None => false,
                 },
-                // 15's own keys (`,` ㅓ, ⇧, its own character …): as the engine reads them.
+                // 15's own keys (q ch, x ㅇ, `;` the break, ¥ ₩ …): as the engine reads them.
                 "roman" if l.id == 15 => bada::bada_roman::token(*key, *shift).is_some_and(|(t, r)| t == tok.t && r == tok.r),
                 "direct" | "roman" | "romaji" | "search" => layout::jis_char(*key, *shift) == Some(c),
                 "kana" => bada::japanese::jis_kana(*key, *shift) == Some(c),

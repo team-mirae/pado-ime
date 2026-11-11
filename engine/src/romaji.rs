@@ -1,4 +1,4 @@
-//! Kana → canonical romaji, for the menu's notes (docs/japanese.md, "Menu notes"): Hepburn as
+//! Kana → canonical romaji, for the menu's notes (docs/spec.md §11.3, "Menu notes"): Hepburn as
 //! Japanese IMEs spell it (shi, chi, tsu, fu, ji, kya, sha), っ doubling the next consonant (tch
 //! before ch), ん as n (n' before a vowel or y), ー as -. Katakana reads as hiragana. Anything else
 //! (kanji, Latin, punctuation) passes through, 、。 as , and . .

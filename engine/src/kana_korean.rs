@@ -1,4 +1,4 @@
-//! Layout 19, JIS Kana Korean (docs/kana-korean.md): Korean typed on the JIS kana layout, each kana
+//! Layout 19, JIS Kana Korean (docs/layouts/19-kana-korean.md): Korean typed on the JIS kana layout, each kana
 //! key its Korean approximation (た → 타, し → 시). ゛ ゜ voice the previous syllable's initial,
 //! small vowels (⇧ 3–0) change its vowel, ん / ⇧ん / ⇧む add a final, and ⇧Z (っ) makes the next
 //! initial tense. Layout from docs/layouts/19-kana-korean.json.
@@ -160,7 +160,7 @@ struct Syl {
     lit: Option<char>,
 }
 
-/// The default reading: what the table says (docs/kana-korean.md).
+/// The default reading: what the table says (docs/layouts/19-kana-korean.md).
 pub fn compose_presses(presses: &[Press]) -> String {
     render(&syllables(presses))
 }
@@ -178,7 +178,7 @@ fn render(syls: &[Syl]) -> String {
     out
 }
 
-/// The vowels a kana's vowel may stand for (docs/kana-korean.md, "Readings"): う-row ㅜ ㅡ,
+/// The vowels a kana's vowel may stand for (docs/layouts/19-kana-korean.md, "Readings"): う-row ㅜ ㅡ,
 /// お-row ㅗ ㅓ, ょ ㅛ ㅕ.
 fn vowel_options(v: char) -> &'static [char] {
     match v {
@@ -221,7 +221,7 @@ fn as_final(s: &Syl) -> Option<char> {
     })
 }
 
-/// Every Korean reading of the presses (docs/kana-korean.md, "Readings"), the default first, at
+/// Every Korean reading of the presses (docs/layouts/19-kana-korean.md, "Readings"), the default first, at
 /// most `limit` (searched depth-first, the default choice first at each kana).
 pub fn readings(presses: &[Press], limit: usize) -> Vec<String> {
     let syls = syllables(presses);

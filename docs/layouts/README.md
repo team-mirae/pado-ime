@@ -3,6 +3,8 @@
 Every layout bada ime builds, one page each, and [combinations](combinations.md) of them
 enabled together. Ids, kinds and names are the [spec's catalog](../spec.md) (§5).
 
+## Summary
+
 | Id | Layout | Display name | Kind | Reliability |
 |---|---|---|---|---|
 | 0 | [JIS QWERTY](00-qwerty.md) | `QWERTY` | muhenkan | English: perfect |
@@ -20,33 +22,15 @@ enabled together. Ids, kinds and names are the [spec's catalog](../spec.md) (§5
 | 151 | [Unicode](151-unicode.md) | `Unicode` | henkan, search | — |
 
 Examples of layouts enabled together: [QWERTY + bada + kana](combinations.md#qwerty--bada--kana),
+[QWERTY + bada roman + kana](combinations.md#qwerty--bada-roman--kana),
 [bada + romaji](combinations.md#bada--romaji), [QWERTY + romaji](combinations.md#qwerty--romaji),
 [QWERTY + KTS](combinations.md#qwerty--kts).
 
-Every layout has a key map, `NN-name.json`, in the layout editor's format (`bada-layout/1`). The
-engine reads `14-3set-jis.json` as it is; `13-bada.json` and `19-kana-korean.json` are the
-references the engine and the renderer follow; the others are written from the engine by
-`cargo run --example layout_json` (in `engine/`). Each file also says what the [typing robot](../robot.md) needs:
+## Contract
 
-- `languages`: what the layout types, from `english`, `korean`, `japanese_kana`, `japanese_romaji`
-  (usually one; none for the searches 150 and 151);
-- `reliability`: for each language in `languages`, what the layout claims: `perfect`, `production`
-  or `experimental`. The typing robot holds it to the claim, in CI ([robot.md](../robot.md#reliability));
-- `input`: how: `direct` (a key, a character), `compose` (jamo into syllables), `roman`, `kana`,
-  `romaji` (spelled, then converted), `transcription` (19), `search`;
-- `rules` (compose): `join_vowels`, `implied_ieung`, `double_toggle`, `held_shift`, `double_tense`;
-- `spelling` (`roman`, `romaji`): the spelling the robot types for each jamo or kana (21: `ん'` is ん
-  before a vowel, y or n, `n'`);
-- `transcription` (19): the tenseness series, what ゛ ゜ っ do to an initial, small vowels, ー, and
-  the readings the menu offers (vowels, finals).
+What every layout provides: a page, `NNN-name.md`, and beside it a key map, `NN-name.json`.
 
-Token roles: `i` initial, `f` final, `c` initial or final, `v` vowel, `a` initial with ㅏ, `n` vowel
-on ㅇ, `k` kana, `l` letter, `x` text. Two tokens on one key are alternatives, chosen by the
-composer's state (13's `]`: ㅃ or ㅄ). `cargo test --test robot` checks every file against the engine.
-
-Images: `python3 tools/render/export_png.py` (HHKB JIS). Interactive: open `tools/render/index.html`.
-
-## Layout metadata and maintainers
+### The page (`NNN-name.md`)
 
 Every layout page (`NNN-name.md`) opens with a metadata header, in whatever form its maintainer
 likes (the pages here use a table), giving:
@@ -64,6 +48,23 @@ likes (the pages here use a table), giving:
 - **Maintainer:** who maintains it now (may be the designer);
 - **Contact:** a working email for the maintainer, and optionally more.
 
+**A page is self-contained:** everything that is about its layout alone is on it, its design
+principles and its history included. What several layouts share (the modes, the menu, ranking, kanji
+conversion) is in the [spec](../spec.md), and their pages link to it.
+
+The pages here are laid out alike: after the header, the board's picture (where there is one) and the
+id, display name and kind, then these sections, each only where the layout has something to say:
+
+1. **What it is**
+2. **Keys and rules**: the layout in full (its keys, how it composes or reads them, its F-key actions,
+   its data); [13](13-bada.md) numbers these sections §1–§6, as the source cites them
+3. **Design principles**
+4. **History**
+5. **Open questions**
+6. **Tools**: where its key map comes from, its images, how to reproduce its measurements
+
+### Maintainers
+
 **Ownership.** The current maintainer owns the design decisions of their layout. If they don't
 respond within **90 days** to an email from an `@teammirae.com` address or a repository admin, ownership
 passes to **Mirae Research**.
@@ -72,3 +73,37 @@ The layouts in this repository as of 0.1.0 are maintained by Mirae Research, des
 where a layout builds on an earlier design (QWERTY, KS X 5002, JIS kana, 세벌식), its page names that
 design too.
 
+### The key map (`NN-name.json`)
+
+Every layout has a key map, `NN-name.json`, in the layout editor's format (`bada-layout/1`). It is one
+of three, and the layout's page says which: read by the engine as it is; the reference the engine and
+the renderer follow; or written from the engine by `cargo run --example layout_json` (in `engine/`).
+Only key maps are `.json` files in this folder: the typing robot and the web build read every `.json`
+here.
+
+Each file has the layout's `id` and `name`, the `keyboard` it was drawn on, and `keys`: for each of the
+48 kana-space keys (by its `KeyboardEvent.code`), the tokens of its `base` and `shift` layers, each a
+text `t` and a role `r`. It also says what the [typing robot](../robot.md) needs:
+
+- `languages`: what the layout types, from `english`, `korean`, `japanese_kana`, `japanese_romaji`
+  (usually one; none for a search);
+- `reliability`: for each language in `languages`, what the layout claims: `perfect`, `production`
+  or `experimental`. The typing robot holds it to the claim, in CI ([robot.md](../robot.md#reliability));
+- `input`: how: `direct` (a key, a character), `compose` (jamo into syllables), `roman`, `kana`,
+  `romaji` (spelled, then converted), `transcription` ([19](19-kana-korean.md)), `search`;
+- `rules` (compose): `join_vowels`, `implied_ieung`, `double_toggle`, `held_shift`, `double_tense`;
+- `spelling` (`roman`, `romaji`): the spelling the robot types for each jamo or kana;
+- `transcription` (for the input of that name): the tenseness series, what ゛ ゜ っ do to an initial,
+  small vowels, ー, and the readings the menu offers (vowels, finals).
+
+Token roles: `i` initial, `f` final, `c` initial or final, `v` vowel, `a` initial with ㅏ, `n` vowel
+on ㅇ, `k` kana, `l` letter, `x` text. Two tokens on one key are alternatives, chosen by the
+composer's state (as on [13](13-bada.md#2-keys)'s `]`). `cargo test --test robot` checks every file against
+the engine (`json_matches_engine`), and every page's Reliability row and the table above against the
+files (`pages_state_the_claims`).
+
+### Pictures
+
+Images: `python3 tools/render/export_png.py` (HHKB JIS, light and dark, into `docs/images/layouts`),
+after `python3 tools/render/build_layouts.py` when a key map changed. Interactive: open
+`tools/render/index.html`.

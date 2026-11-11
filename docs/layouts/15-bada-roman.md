@@ -22,10 +22,19 @@
 |---|---|---|
 | 15 | `Korean (bada roman)` | henkan, ranked |
 
-Built (`engine/src/bada_roman.rs`; key map `15-bada-roman.json`, written by
-`cargo run --example layout_json`). The number and symbol keys not named below type their JIS characters (owner, 2026-11-11).
+## What it is
 
-## Rules
+Korean typed as it's romanized (`hanguk` 한국, `annyeonghaseyo` 안녕하세요), on the letters as QWERTY
+has them. It starts from the spellings of Korean Roman ([18](18-korean-roman.md)) and adds keys of its
+own (`q`, `x`, `;`, `-` after `e`), informal spellings (`woo`, `young`, `sung`), an English
+dictionary (`apple` offers 사과) and Japanese on'yomi as shortcuts (`mei` 명). Every reading of the
+letters is kept and ranked by word counts: what the letters spell shows, unless another reading is a
+far better-known word. Digits and punctuation type themselves and end the word.
+
+Built (`engine/src/bada_roman.rs`; ranking in `engine/src/engine.rs`). The number and symbol keys not
+named below type their JIS characters (owner, 2026-11-11).
+
+## Keys and rules
 
 - **An English dictionary.** English words typed in letters convert to Korean. The case says
   which readings (owner, 2026-11-11):
@@ -38,7 +47,8 @@ Built (`engine/src/bada_roman.rs`; key map `15-bada-roman.json`, written by
 
   **A dictionary reading never ranks first: at best it's second.** Whatever the letters type as
   Korean comes first; `apple` offers 사과 at row 2 and 애플 at row 3, `Apple` 애플 at row 2 and 사과
-  at row 3. Only letters are looked up, so a name with digits (Audi A3, 007) never matches.
+  at row 3. At most eight dictionary rows are offered, each with the word as typed as its note.
+  Only letters are looked up, so a name with digits (Audi A3, 007) never matches.
 
   **Brands sharing a name** (Corona: a Mexican beer and a Colombian ceramics maker) offer each
   Hangul spelling; the one that shows first is the brand with the most revenue, where that's known;
@@ -79,23 +89,24 @@ Built (`engine/src/bada_roman.rs`; key map `15-bada-roman.json`, written by
   model (`ko-jamo-4gram.bin`) picks the one that looks most Korean, at the same kind of cost per
   changed jamo: `jiyeokchonggwalui` 지역총괄의, not 지역촌꽈릐. On the robot's corpora this raised
   first-row hits from 93.4 / 97.0 / 95.9% to 96.3 / 99.9 / 97.8% (Common Voice / common words / law).
-- **Punctuation ends the word.** A key that types a character as it is (⇧. ⇧, ⇧/ … , ⇧ digits, `/`,
-  `-` where it doesn't lengthen) commits what shows, then the character, so it can't change the
-  reading before it: `hanguk` ⇧. → 한국. Not when another enabled layout, QWERTY aside, types
+- **Punctuation ends the word.** A key that types a character as it is (the digits, `.` `,` `/` and
+  the other symbol keys, with or without ⇧; `-` where it doesn't lengthen) commits what shows, then
+  the character, so it can't change the reading before it: `hanguk` then `.` commits 한국 and the
+  full stop. Not when another enabled layout, QWERTY aside, types
   that key as part of a word (kana's る on `.`, あ on `3`; bada's jamo on the number row): then
   the key is staged as usual, and a bada roman reading with letters after such a key ranks under
   the others (`3 6 e` shows 青い, not 36에).
 - **`ts` is a final ㅆ** (`t`, a final ㅅ, and `s` again): `its` 있; before a vowel the default
   gives `s` to the next syllable (`itseo` 잇서) and 있어, a known word, ranks first.
 - **`h` is a final ㅎ** too: `joh` 좋. Before a vowel the default gives `h` to the next syllable
-  (`joha` 조하), and 좋아 is offered as another reading.
+  (`joha` 조하), and 좋아, a known word, ranks first.
 - **`l` before `t` implies a ㅎ** between them (owner, 2026-11-11): `lt` also reads ㅀ + ㄷ, as
   it's said (ㅎ + ㄷ sounds like ㅌ): `daltorok` 닳도록, `silta` 싫다, `ilta` 잃다. The ranking
   takes ㅀ + ㄷ for the same letters as ㄹ + ㅌ, so the known word comes first. `lh` before a
   vowel stays as it was (`ilheo` 잃어).
 - **`j` and `z` are a final ㅈ** too, as `t` is (owner, 2026-11-11): `naj` 낮, `jaj` 잦. Before a
-  vowel the default gives them to the next syllable (`naja` 나자), and 낮아 is offered as another
-  reading. `nj` is still ㄵ (`anj` 앉).
+  vowel the default gives them to the next syllable (`naja` 나자), and 낮아, a known word, ranks
+  first. `nj` is still ㄵ (`anj` 앉).
 - **`;` separates syllables**: `han;guk` 한국, `hang;uk` 항욱. `-` and `'` don't (unlike Korean
   Roman, 18).
 - **`-` lengthens ㅔ, ㅖ and ㅞ** into ㅐ, ㅒ and ㅙ, as ー does ㅔ and ㅖ in Korean (Kana), 19:
@@ -113,8 +124,8 @@ Built (`engine/src/bada_roman.rs`; key map `15-bada-roman.json`, written by
   | base | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 | - | ^ | ₩ | @ | [ | : | ] | , | . | / | \ | break |
   | ⇧ | ! | " | # | $ | % | & | ' | ( | ) | + | = | ~ | \| | ` | 「 | * | 」 | < | > | ? | _ | ; |
 
-  ⌥`;` is the middle dot `·` (U+00B7, 가운뎃점); other ⌥ keys aren't taken. `-` after `e` still
-  lengthens it (`e-` 애). Each of these keys commits what shows before typing
+  ⌥`;` is the middle dot `·` (U+00B7, 가운뎃점); other ⌥ keys aren't taken. ⇧⌥ + a number or symbol
+  key types its shifted JIS character, as in bada (13). `-` after `e` still lengthens it (`e-` 애). Each of these keys commits what shows before typing
   its character (Punctuation ends the word, above).
 
 - **Interlaced vowels: `yu` and `u` before a final.** Common informal spellings write ㅕ as `yu`
@@ -144,10 +155,11 @@ Built (`engine/src/bada_roman.rs`; key map `15-bada-roman.json`, written by
   A setting, on by default: **Accept Japanese romaji readings as shortcuts when it saves
   keystrokes**, with the tooltip "i.e. mei as 명, or jou as 정".
 
-## F-key actions
+### F-key actions
 
-Bound to nothing by default (spec §6.5). The jamo actions (`initials`, `vowels`, `finals`) act on the **selection**; else on the **staged
-text** (the result shows in its place until the commit, like bada's `raw`); else on nothing.
+Bound to nothing by default (spec §6.5). The jamo actions (`initials`, `vowels`, `finals`) act on the
+**staged text** (the result stays staged in its place, and typing goes on after it); with nothing
+staged, on the **selection**; with no selection, on nothing.
 Only Hangul syllables change: everything else, Latin, digits, punctuation, lone jamo, stays as it
 is, in place.
 
@@ -156,15 +168,31 @@ is, in place.
 | `initials` | Leaves only each syllable's initial consonant | 한국 → ㅎㄱ, 안녕! → ㅇㄴ! |
 | `vowels` | Leaves only each syllable's vowel (a compound vowel stays whole) | 한국 → ㅏㅜ, 과자 → ㅘㅏ |
 | `finals` | Leaves only each syllable's final (a double final stays whole); a syllable with no final is deleted | 한국 → ㄴㄱ, 닭고기 → ㄺ, 가나 → (nothing) |
-| `fullwidth-latin` | The staged keys as QWERTY, full-width (as in the Japanese layouts, 20 and 21) | `ha,` → ｈａ， |
-| `halfwidth-latin` | The staged keys as QWERTY, half-width | `ha,` → ha, |
+| `fullwidth-latin` | The staged keys as QWERTY, full-width (as in the Japanese layouts, 20 and 21). Lasts until the commit | `ha;` → ｈａ； |
+| `halfwidth-latin` | The staged keys as QWERTY, half-width | `ha;` → ha; |
 
-## Open
+## History
+
+Why it exists, in the owner's words: the [README](../../README.md#bada-roman).
 
 - Tried and taken out (2026-11-11): `,` ㅓ, `.` ㅡ, `:` ㅢ, `@` final ㅇ, `0` `oo`, `9` `yo`, `8`
   `yu`; then the number and symbol keys typed nothing on the base layer, until they went back to JIS.
 - Decided against (owner, 2026-11-11): a second reading for informal name spellings (`oo` ㅠ after
   y as in Yoon, `uh` ㅓ as in Suh, `ah`, a silent final `h`, `oi` ㅚ, `ar` ㅏ, initial `l` as ㅇ or
   ㄴ). Readings stay rule-based.
+
+## Open questions
+
 - **[decide]** Names of several words (`Coca-Cola`, `General Motors`) and inflected forms
   (`apples`, `ran`).
+
+## Tools
+
+Key map: `15-bada-roman.json`, written from the engine by `cargo run --example layout_json` (in
+`engine/`). Data, each built by a script in `engine/tools/`: the romaji shortcuts
+(`build_ja_shortcuts.py`), which Hangul shows first where brands share a name
+(`build_shared_order.py`), the rare English words QWERTY ranks beside it (`build_en_rare.py`). The
+robot types it in Revised Romanization from the key map's `spelling` table, with `;` as the break
+([robot.md](../robot.md)); the English dictionary and the romaji shortcuts aren't typed.
+
+Images: `python3 tools/render/export_png.py` (HHKB JIS). Interactive: open `tools/render/index.html`.

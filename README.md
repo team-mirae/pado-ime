@@ -123,7 +123,7 @@ from the first lesson. Same engine.
 | 10 | Korean (2-set) | KTS, the standard Korean keyboard |
 | 11 | Korean (legacy-korean) | from JIS Korean |
 | 12 | Korean (legacy-moonshot) | from JIS Moonshot |
-| 13 | Korean (bada) | [docs/bada-layout.md](docs/bada-layout.md) |
+| 13 | Korean (bada) | [docs/layouts/13-bada.md](docs/layouts/13-bada.md) |
 | 14 | Korean (3-set JIS) | 세벌식 for JIS, 모아쓰기 |
 | 15 | Korean (bada roman) | [docs/layouts/15-bada-roman.md](docs/layouts/15-bada-roman.md) |
 | 18 | Korean (Roman) | Korean in romanization |

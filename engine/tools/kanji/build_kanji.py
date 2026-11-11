@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Builds engine/data/kanji.bin, the kana-kanji conversion data (docs/japanese.md).
+"""Builds engine/data/kanji.bin, the kana-kanji conversion data (docs/spec.md §11.2).
 
 The source is Mozc's open-source dictionary (google/mozc, src/data/dictionary_oss) at a pinned
 commit: IPAdic (NAIST, a permissive licence that requires its notice), the Okinawa dictionary
@@ -9,7 +9,7 @@ engine/data/LICENSE-mozc.txt next to the data.
     python3 engine/tools/kanji/build_kanji.py    # fetch (cached in tools/kanji/mozc), prune, write
 
 It also copies Mozc's evaluation set to engine/tests/data/kanji-evaluation.tsv, which
-tests/kanji.rs converts (the accuracy floor there is this cut's).
+tests/real_data.rs converts (the accuracy floor there is this cut's).
 
 Pruning (measured against Mozc's evaluation.tsv, exact sentence matches: the whole dictionary
 79%, this cut 70% at about a third of the entries): every entry of cost <= KEEP_COST, plus the

@@ -1,5 +1,5 @@
 // Loads the built wasm with the shipped data and types a few words: the engine works in WebAssembly.
-//   node web/test/smoke.mjs   (after web/build.sh, or with the wasm built in web/wasm/target)
+//   node web/test/smoke.mjs   (after web/build.mjs, or with the wasm built in web/wasm/target)
 import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { Engine, DATA_FILES } from "../src/engine.js";

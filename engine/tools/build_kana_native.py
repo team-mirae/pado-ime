@@ -12,7 +12,7 @@ Output: reading, tab, times seen, tab, share written in kana; most frequent firs
 
 Also engine/data/ja-common-words.txt: the COMMON most common words not written in kana (content
 words in their dictionary form: 死, 一, 原因, ケン), as surface, tab, reading, tab, times seen. The
-engine raises them in the menu when the whole reading is typed (docs/japanese.md).
+engine raises them in the menu when the whole reading is typed (docs/spec.md §11.2).
 """
 import bz2, collections, os, re
 

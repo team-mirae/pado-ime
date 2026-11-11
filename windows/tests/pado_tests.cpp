@@ -74,6 +74,11 @@ void TestPado(const Module& module, const std::string& dictionary) {
         CHECK(field.preedit() != "귀하");
         t.Type("S-henkan Enter");
         CHECK_EQ(field.text(), std::string("귀하\n"));
+        // A common English word shows as English (bada 0.2.2: en-words.txt's counts after a tab
+        // aren't part of the word; before, love showed 로베).
+        t.Type("KeyL KeyO KeyV KeyE");
+        CHECK_EQ(field.preedit(), std::string("love"));
+        t.Type("Escape");
     }
     {
         // Japanese kana (20), README's example: 3 u q → あなた among the readings.

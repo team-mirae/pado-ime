@@ -17,8 +17,12 @@
 |---|---|---|
 | 150 | `Symbols` | henkan, search (Mirae Research range 150–199) |
 
-A search. What you type stays first; what it finds is listed under it, each with its canonical
-name in the menu's note column.
+## What it is
+
+A search. What you type stays first; what it finds is listed under it (at most 40), each with its
+canonical name in the menu's note column. Tab or ↓ moves to a result.
+
+## Keys and rules
 
 - **Letters and digits** spell the search, either case. **Space** adds a word (`happy face`);
   **⇧Space** commits what shows and types a space. (Space searches only when every layout in use is
@@ -31,7 +35,7 @@ name in the menu's note column.
 - **Emoji with skin tones** are offered in the order set in Settings (none, light, medium-light,
   medium, medium-dark, dark by default); a tone left out isn't offered.
 
-## Data
+### Data
 
 - `engine/data/symbols.tsv`: the symbols, hand-written: text, **canonical name**, tags, and the keys
   that offer it. Currency names are their ISO codes (`usd` → $), and `$` is also tagged dollar,
@@ -42,3 +46,7 @@ name in the menu's note column.
   of its own shows it ($ € ₩ ¥ £ ₪), else its local short form (S$, HK$) or its code (CHF, NOK).
 - `engine/data/emoji.tsv`: emoji 18.0 names and CLDR English keywords, built by
   `engine/tools/build_unicode_data.py` (Unicode License v3).
+
+## Tools
+
+Key map: `150-symbols.json`, written from the engine by `cargo run --example layout_json` (in `engine/`).

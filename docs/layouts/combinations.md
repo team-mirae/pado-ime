@@ -56,7 +56,7 @@ first, then a common English word, then a rare English word over a reading that'
 
 Henkan candidates **13, 21**. Korean on Bada and Japanese in romaji, for a typist who doesn't type
 kana. A romaji word that is a known Japanese word ranks first (`konnichiha` → こんにちは), and
-Korean still comes out of the same keys (D H G R H V H B E M A H → 감사합니다) ([japanese.md](../japanese.md#ranking)).
+Korean still comes out of the same keys (D H G R H V H B E M A H → 감사합니다) ([spec §11.1](../spec.md#111-ranking)).
 
 ## QWERTY + romaji
 

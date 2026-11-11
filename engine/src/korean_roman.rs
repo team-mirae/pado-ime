@@ -1,4 +1,4 @@
-//! Layout 18, JIS Korean Roman (docs/korean-roman.md): Korean typed as it's romanized (Revised
+//! Layout 18, JIS Korean Roman (docs/layouts/18-korean-roman.md): Korean typed as it's romanized (Revised
 //! Romanization and common variants: annyeonghaseyo → 안녕하세요). Like Korean (Kana) (19), the
 //! default reading shows and every other reading of the letters is kept: spellings that stand for
 //! several jamo (k ㅋ/ㄱ, o ㅗ/ㅓ, t as a final ㅅ/ㄷ/ㅆ …) and other syllable splits.

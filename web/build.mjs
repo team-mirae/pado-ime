@@ -68,6 +68,10 @@ for (const f of readdirSync(root + "docs/layouts").filter(f => f.endsWith(".json
 }
 writeFileSync(out + "manifest.json", JSON.stringify(manifest, null, 1));
 const total = manifest.wasm.size + Object.values(manifest.data).reduce((n, d) => n + d.size, 0);
+// The loading box says how much this build downloads: the wasm and the data, as built just now.
+const page = readFileSync(out + "index.html", "utf8");
+if (!page.includes("{{download}}")) throw new Error("web/src/index.html: no {{download}} to put the download size in");
+writeFileSync(out + "index.html", page.replace("{{download}}", `${(total / 1e6).toFixed(1)} MB`));
 console.log(`web/dist: ${manifest.layouts.length} layouts, ${(total / 1e6).toFixed(1)} MB to download`);
 
 if (process.argv.includes("--vercel")) {

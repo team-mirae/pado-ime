@@ -25,14 +25,55 @@
 Legends: bottom of a key unshifted, top with Shift; small grey, the JIS legend. Colours: blue initial or
 consonant, orange final, green vowel, purple syllable, maroon kana.
 
-Japanese on the JIS kana legends (JIS Moonshot `A_KANA`), with kanji conversion from Mozc's
-dictionary. Full rules in [japanese.md](../japanese.md).
+## What it is
 
-- ⇧ for small kana and punctuation: ⇧3–⇧9 ぁぅぇぉゃゅょ, ⇧0 を, ⇧E ぃ, ⇧Z っ, ⇧, 、 ⇧. 。 ⇧/ ・,
-  ⇧[ 「 ⇧] 」.
-- ゛ (@) and ゜ ([) attach to the kana before them (か゛ → が, は゜ → ぱ).
+Japanese on the JIS kana legends (JIS Moonshot `A_KANA`), with kanji conversion from Mozc's
+dictionary.
+
+Status: built in v0.1 (owner, 2026-11-07), with **kanji conversion** since 2026-11-07. Code: `engine/src/japanese.rs`; script forms and F-key actions in
+`engine/src/engine.rs`.
+
+## Keys and rules
+
+Every key types its JIS kana legend, with Shift for small kana and punctuation: ⇧3–⇧9 ぁぅぇぉゃゅょ,
+⇧0 を, ⇧E ぃ, ⇧Z っ, ⇧, 、, ⇧. 。, ⇧/ ・, ⇧[ 「, ⇧] 」. ゛ (@) and ゜ ([) attach to the kana before
+them (か゛ → が, は゜ → ぱ, う゛ → ゔ) and stay as they are where they can't.
+
+Unshifted on the first line of each row, ⇧ on the second (empty: as unshifted):
+
+| | `1` | `2` | `3` | `4` | `5` | `6` | `7` | `8` | `9` | `0` | `-` | `^` | `¥` |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| key | ぬ | ふ | あ | う | え | お | や | ゆ | よ | わ | ほ | へ | ー |
+| ⇧ |  |  | ぁ | ぅ | ぇ | ぉ | ゃ | ゅ | ょ | を |  |  |  |
+
+| | `Q` | `W` | `E` | `R` | `T` | `Y` | `U` | `I` | `O` | `P` | `@` | `[` |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| key | た | て | い | す | か | ん | な | に | ら | せ | ゛ | ゜ |
+| ⇧ |  |  | ぃ |  |  |  |  |  |  |  |  | 「 |
+
+| | `A` | `S` | `D` | `F` | `G` | `H` | `J` | `K` | `L` | `;` | `:` | `]` |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| key | ち | と | し | は | き | く | ま | の | り | れ | け | む |
+| ⇧ |  |  |  |  |  |  |  |  |  |  |  | 」 |
+
+| | `Z` | `X` | `C` | `V` | `B` | `N` | `M` | `,` | `.` | `/` | `\` |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| key | つ | さ | そ | ひ | こ | み | も | ね | る | め | ろ |
+| ⇧ | っ |  |  |  |  |  |  | 、 | 。 | ・ |  |
+
+The table is JIS Moonshot's (`docs/moonshot.md` §3 there), as is the ゛ ゜ automaton.
+
+Shared with Romaji ([21](21-romaji.md)), and described in the spec ([§11](../spec.md#11-japanese-layouts-20-and-21):
+ranking, kanji conversion, menu notes):
+
 - Typing shows the top conversion (わたしはがくせいです → 私は学生です); Tab gives the other
-  conversions; with script forms on (Settings, off by default), ⇧Tab **−1 hiragana**, **−2 katakana**.
-- F-key actions: `hiragana`, `katakana`, `halfwidth-katakana`, `fullwidth-latin`, `halfwidth-latin`.
+  conversions ([spec §11.2](../spec.md#112-kanji-conversion)); with script forms on (Settings, off by
+  default), ⇧Tab **−1 hiragana**, **−2 katakana** ([spec §6.4](../spec.md#64-the-suggestion-menu-negative-indexes)).
+- F-key actions: `hiragana`, `katakana`, `halfwidth-katakana`, `fullwidth-latin`, `halfwidth-latin`
+  ([spec §6.5](../spec.md#65-f-key-actions)).
+
+## Tools
+
+Key map: `20-kana.json`, written from the engine by `cargo run --example layout_json` (in `engine/`).
 
 Images: `python3 tools/render/export_png.py` (HHKB JIS). Interactive: open `tools/render/index.html`.

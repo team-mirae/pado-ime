@@ -19,7 +19,8 @@ ap.add_argument("--words", default="/usr/share/dict/words")
 a = ap.parse_args()
 
 head = open(OUT, encoding="utf-8").read().split("\n" + MARK)[0].rstrip("\n")
-common = {l.strip().lower() for l in head.split("\n") if l.strip() and not l.startswith("#")}
+# A line of the common list is a word, with its count after a tab in the generated part.
+common = {l.split("\t")[0].strip().lower() for l in head.split("\n") if l.strip() and not l.startswith("#")}
 rare = sorted({w for w in (l.strip() for l in open(a.words, encoding="utf-8"))
                if w.isascii() and w.isalpha() and w.islower() and len(w) >= 5 and w not in common})
 with open(OUT, "w", encoding="utf-8") as f:

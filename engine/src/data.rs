@@ -216,13 +216,14 @@ impl Data {
             }
         }
         // The list's own words, then (after `#! rare`) the rare ones: words, but not common ones.
+        // One word per line; the generated part of the list has its count after a tab.
         let mut rare = false;
         for line in english.lines() {
             if line.starts_with("#! rare") {
                 rare = true;
                 continue;
             }
-            let w = line.trim();
+            let w = line.split('\t').next().unwrap_or("").trim();
             if w.is_empty() || w.starts_with('#') {
                 continue;
             }
@@ -330,6 +331,10 @@ mod tests {
         assert!(d.is_english("Hello"));
         assert_eq!(d.korean_count("ㅋㅋ"), 9);
         assert_eq!(d.oecd[0].0, "美");
+        // en-words.txt: a count after a tab isn't part of the word; rare words after `#! rare`
+        let e = Data::parse("", "hello\nlove\t1234\n#! rare\ninterpolate\n", "", "");
+        assert!(e.is_english("love") && e.is_english("hello") && !e.is_english("interpolate"));
+        assert!(e.is_english_rare("interpolate") && !e.is_english_rare("love"));
     }
 }
 

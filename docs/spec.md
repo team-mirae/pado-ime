@@ -1,7 +1,9 @@
 # bada ime: spec
 
 Status: **draft** (2026-11-07). Items marked **[decide]** are not settled: don't implement a guess
-silently. The Bada layout itself (id 13) is designed in [bada-layout.md](bada-layout.md).
+silently. Where the build differs from the design, or has settled an open item for now, the text says
+"as built" (the build is 0.2.2; §7.0 sums it up). The Bada layout itself (id 13) is designed in
+[layouts/13-bada.md](layouts/13-bada.md); every layout has its page in [layouts/](layouts/README.md).
 
 ## 1. Names
 
@@ -21,7 +23,8 @@ reorganises them around two modes (muhenkan, henkan) and a pool of layouts.
 
 ## 2. Scope
 
-- **macOS only.** No Windows, no web playground as a product (a design playground is fine).
+- **macOS only** as an input method. No Windows. The web simulator (`/web`, §7) is the same engine
+  behind a text field in a page, for trying bada ime out: not an input method.
 - **JIS keyboards only** (日本語配列). Keys are physical positions with JIS legends; on any other
   keyboard layout the symbol keys type the wrong symbols. No ANSI/ISO modes.
 - **Caps Lock is bada ime's** (owner, 2026-11-11; §6.7), once Accessibility and Input Monitoring
@@ -37,8 +40,10 @@ Canonically **무변환 모드** / **변환 모드**; in the project, **muhenkan
 | layout | A mapping from keystrokes to text, with an integer **layout id** (§5) |
 | muhenkan layout | A layout that types a letter or sends a keycode per key. It **cannot compose**: no preedit |
 | henkan layout | A layout that composes, as CJK input methods do: keys build a preedit, which is committed |
-| deterministic | A henkan layout whose keys have exactly one reading (every Korean layout here) |
+| deterministic | A henkan layout whose keys have exactly one reading (the composing Korean layouts, 10–14) |
+| ranked | A henkan layout that keeps several readings of the same keys and ranks them by word counts (Korean typed as it sounds: 15, 18, 19) |
 | non-deterministic | A henkan layout with several readings for the same keys (Japanese: kana → kanji) |
+| search | A henkan layout whose keys spell a search, and whose menu lists what it finds (150, 151) |
 | candidate | A layout enabled in henkan mode. Muhenkan layouts can be candidates too |
 | interpretation | One reading of the staged keys, by one candidate (or one of its conversions) |
 
@@ -54,7 +59,9 @@ bada ime registers exactly two macOS input modes, and never more:
 | **Bada Henkan** | Japanese (`ja`) | henkan mode |
 
 macOS routes 英数 to the current English/Roman source and かな to the Japanese one. Layout
-switching inside a mode is bada ime's own state, not a macOS input source.
+switching inside a mode is bada ime's own state, not a macOS input source. System Settings lists the
+two as **bada (muhenkan)** and **bada (henkan)** (バダ（無変換）, バダ（変換）; 바다 (무변환), 바다 (변환));
+their ids are `me.sjun.inputmethod.Bada.Muhenkan` and `….Henkan`.
 
 **Mode changes are macOS's own switch.** The key tap (§6.1) catches 英数, かな and the profile keys,
 but never selects an input source itself: a key that changes mode (英数 from henkan, かな or a
@@ -70,20 +77,21 @@ act in the input method directly.
 still types in password fields.)
 
 **The Keyboard Viewer** shows the keyboard layout the input method sets (`overrideKeyboard`): in
-muhenkan, ABC; in henkan, **bada's (13) legends**, whatever layouts the profile uses (one board can't
-show them all). That layout is `bada.keylayout`, hidden from the input source list and shipped in the
+muhenkan, ABC (with ろ as `\`); in henkan, **bada's (13) legends**, whatever layouts the profile uses
+(one board can't show them all). That layout is `bada.keylayout`, hidden from the input source list and shipped in the
 app (`mac/tools/make-keylayout.swift`): ABC as a JIS keyboard has it, with bada's jamo on the
 unshifted and ⇧ layers, and on a Caps Lock layer of its own, which shows the unshifted jamo (henkan
 ignores Caps Lock, §6.7). Its ⌥, ⌘ and ⌃ layers are ABC's, so shortcuts are unchanged; a key the
 engine passes on that carries a jamo there is typed as ABC types it, by the input method. Muhenkan's
 `qwerty.keylayout` is ABC with ろ as `\` (⇧ `_`), and has the same Caps Lock layer: ABC's capitals.
-Without that layer a keylayout's Caps Lock types its unshifted layer, lowercase.
+Without that layer a keylayout's Caps Lock types its unshifted layer, lowercase. Both files are
+written at build time from ABC and `docs/layouts/13-bada.json`.
 
 ### 4.2 Muhenkan mode
 
 QWERTY passthrough: practically the same as JIS English in JIS Moonshot. Only muhenkan layouts run
 here; the active one is the **current muhenkan layout** (today only id 0 exists). Nothing composes,
-nothing is staged.
+nothing is staged (but the letter a ⌥ + letter variants list shows, §6.2).
 
 ### 4.3 Henkan mode
 
@@ -95,7 +103,10 @@ nothing is staged.
   (QWERTY + Moonshot Korean + JIS kana, predicted).
 - The ranker is JIS Moonshot's predictor, generalised from its fixed three readings to the set of
   enabled candidates. **[decide]** how a candidate the predictor was never trained on (e.g. Bada,
-  Romaji) is scored until it has a model.
+  Romaji) is scored until it has a model. As built there is no predictor yet: the ranker is rules
+  over word counts (§7.0).
+- A layout reads the staged keys only if it has a meaning for every one of them; one that doesn't
+  offers nothing until the keys are committed.
 
 ## 5. Layouts
 
@@ -118,8 +129,10 @@ Ids are `u32`. **Development / debug** ranges (re-numbered when merged to main):
 ### 5.2 Catalog
 
 Every layout's page in [layouts/](layouts/README.md) opens with its metadata (names in English,
-Korean, Japanese and its native script, short names, a unique in-code name, abbreviations, designer,
-maintainer, contact) and is governed by the maintainer rules there.
+Korean, Japanese and its native script, short names, a unique in-code name, the reliability it claims,
+abbreviations, designer, maintainer, contact) and is governed by the maintainer rules there. A page is
+self-contained: the layout's keys and rules, its design principles and its history are on it; this
+spec has what the layouts share.
 
 | Id | Name | Display name | Kind | From |
 |---|---|---|---|---|
@@ -127,13 +140,13 @@ maintainer, contact) and is governed by the maintainer rules there.
 | 10 | JIS KTS | `Korean (2-set)` | henkan, deterministic | standard KS X 5002 2-set on the JIS letter keys, JIS symbols untouched |
 | 11 | JIS Korean Legacy | `Korean (legacy-korean)` | henkan, deterministic | JIS Korean Mode A |
 | 12 | JIS Moonshot | `Korean (legacy-moonshot)` | henkan, deterministic | JIS Moonshot Mode A's Korean reading (moonshot.md §9) |
-| 13 | JIS Bada | `Korean (bada)` | henkan, deterministic | new: [bada-layout.md](bada-layout.md) |
+| 13 | JIS Bada | `Korean (bada)` | henkan, deterministic | new: [layouts/13-bada.md](layouts/13-bada.md) |
 | 14 | JIS 3-set (세벌식 JIS, K3S-J) | `Korean (3-set JIS)` | henkan, deterministic | new: [layouts/14-3set-jis.md](layouts/14-3set-jis.md), designed by the owner from 세벌식 순아래; 모아쓰기 (jamo of a syllable in any order) |
 | 15 | bada roman | `Korean (bada roman)` | henkan, ranked (the default reading, or a better-known one, shows; the English dictionary never first) | new: [layouts/15-bada-roman.md](layouts/15-bada-roman.md) |
-| 18 | JIS Korean Roman | `Korean (Roman)` | henkan, ranked (the default reading shows; other readings offered) | new: [korean-roman.md](korean-roman.md) |
-| 19 | JIS Kana Korean | `Korean (Kana)` | henkan, ranked (the table's reading shows; other pronunciations offered) | new, minor: [kana-korean.md](kana-korean.md) |
-| 20 | JIS Kana | `Japanese (Kana)` | henkan, non-deterministic (kanji conversion) | JIS Moonshot `A_KANA`: [japanese.md](japanese.md) |
-| 21 | JIS Romaji | `Japanese (Romaji)` | henkan, non-deterministic (kanji conversion) | new: [japanese.md](japanese.md) |
+| 18 | JIS Korean Roman | `Korean (Roman)` | henkan, ranked (the default reading shows; other readings offered) | new: [layouts/18-korean-roman.md](layouts/18-korean-roman.md) |
+| 19 | JIS Kana Korean | `Korean (Kana)` | henkan, ranked (the table's reading shows; other pronunciations offered) | new, minor: [layouts/19-kana-korean.md](layouts/19-kana-korean.md) |
+| 20 | JIS Kana | `Japanese (Kana)` | henkan, non-deterministic (kanji conversion) | JIS Moonshot `A_KANA`: [layouts/20-kana.md](layouts/20-kana.md), §11 |
+| 21 | JIS Romaji | `Japanese (Romaji)` | henkan, non-deterministic (kanji conversion) | new: [layouts/21-romaji.md](layouts/21-romaji.md), §11 |
 | 150 | Symbols | `Symbols` | henkan, search | Mirae Research: [layouts/150-symbols.md](layouts/150-symbols.md) |
 | 151 | Unicode | `Unicode` | henkan, search | Mirae Research: [layouts/151-unicode.md](layouts/151-unicode.md) |
 
@@ -141,20 +154,29 @@ Every layout declares whether it is muhenkan or henkan.
 
 ### 5.3 Settings
 
-- the **enabled set** of henkan candidates;
+- the **enabled set** of henkan candidates (default: bada, 13); earlier in the list wins a tie (the
+  settings window keeps the list in catalog order);
 - the **default muhenkan layout** (英数 enters it);
 - the **default henkan target** for HYPER+かな (§6.1), and the **cycle order** for MEH+かな.
-  Without a user order: integer id ascending.
+  Without a user order: integer id ascending. (Not built: §7.0.)
 - a **weight** per layout (0–10, default 1): a multiplier on the score of every entry that layout
   raises, in every profile (before the user's negative words and the typo suggestions);
-- **henkan profiles** (§6.6), off by default: candidates per profile key, links, recorded keys;
-- **script forms** (§6.4), off by default;
+- **henkan profiles** (§6.6), off by default: candidates per profile key, links, recorded keys, what
+  かな does in each profile, the cycle order, F keys per profile;
+- **script forms** (§6.4), off by default, and the method that offers them;
+- the **F keys** (§6.5): intercepted or not (default: intercepted), and each key's binding
+  (default: none);
 - the **emoji skin-tone order** for layout 150;
+- layout 15's **Japanese romaji readings as shortcuts**, on by default
+  ([layouts/15-bada-roman.md](layouts/15-bada-roman.md));
 - **Caps Lock** (§6.7): toggle (default), transient or respect, and its muhenkan rule: ALL CAPS
   (default) or UPPER_SNAKE (§6.2).
 
-Settings → Export Settings… writes all of them to a file (`{"format": "bada-settings/1", "settings":
-{…}}`); Import Settings… replaces them all from one (fields a file lacks take their defaults).
+The settings window (the input menu's "bada ime Settings…") has them on its Layouts, Profiles, Menu
+and F Keys tabs, with Dictionary (§8), Backup and About. Backup → Export Settings… writes all of them
+to a file (`{"format": "bada-settings/1", "settings": {…}}`); Import Settings… replaces them all from
+one (fields a file lacks take their defaults). The Mac keeps them in its user defaults; the web
+simulator in the browser's local storage, and the same file moves between the two.
 
 ## 6. Keys
 
@@ -179,12 +201,18 @@ target, while §4.3 says henkan mode has no sub-modes. Which of these is meant?
 - (c) only one henkan exists, so HYPER+かな from muhenkan always just enters henkan, and MEH+かな
   cycles muhenkan layouts only.
 
+As built: HYPER+かな and MEH+かな both switch to the other mode (§7.0), and so does Caps Lock on its
+default setting (§6.7). 英数 and かな are caught system-wide by a key tap once Accessibility is
+allowed (the input menu's "Allow 英数 and かな Everywhere…", shown until it is): without the tap they
+act only when macOS passes them to the input method, and it doesn't always pass かな on in henkan
+mode. The same menu item asks for Input Monitoring (§6.6, §6.7).
+
 ### 6.2 In muhenkan mode
 
 | Key | Action |
 |---|---|
 | ⌥Space | `_` |
-| Caps Lock on | The **muhenkan rule** (§6.7): **ALL CAPS** (default), letters in capitals, as Caps Lock always types; or **UPPER_SNAKE**, capitals with Space typing `_` and ⌥Space a space |
+| Caps Lock on | The **muhenkan rule** (§6.7): **ALL CAPS** (default), letters in capitals, as Caps Lock always types; or **UPPER_SNAKE**, capitals with Space typing `_` and ⌥Space a space. While bada ime handles Caps Lock, the input method types the capitals itself (§6.7) |
 | ろ (`_` key, IntlRo) | `\`; ⇧ `_` (as on every JIS keyboard; macOS's ABC layout would give `_` for both). The engine types it, in muhenkan and wherever henkan passes the key on |
 | ⌥ + letter | its **variants**, as JIS English did (jis-korean spec §3.6.3): the letter shows with a row of accented variants (⌥e: è é ê ë ē ė ę; ⇧ for capitals), none chosen. 1–9, 0 pick; the same ⌥ + letter again or the arrows choose; Enter commits; Esc / ⌫ cancel; any other key keeps what shows and goes on. A letter without variants types macOS's ⌥ character. In terminals ⌥ goes to the app untouched |
 | 半角/全角 | **full-width** applied to the selection |
@@ -192,7 +220,7 @@ target, while §4.3 says henkan mode has no sub-modes. Which of these is meant?
 
 半角/全角 is the `Backquote` position (left of 1 on a full JIS board, at the bottom left on the HHKB
 JIS; Apple JIS boards don't have it). The conversion rules are JIS Moonshot's (moonshot.md §4.1). **[decide]** with no selection:
-JIS Moonshot falls back to the word under the caret; keep that, or do nothing?
+JIS Moonshot falls back to the word under the caret; keep that, or do nothing? As built: nothing.
 
 ### 6.3 In henkan mode
 
@@ -202,9 +230,10 @@ JIS Moonshot falls back to the word under the caret; keep that, or do nothing?
 | Space, Enter, Esc, Tab, … | Commit the preedit as shown, **then** perform the key's normal action |
 | かな, Tab, ↓ | Next entry in the suggestion menu (§6.4) |
 | ⇧かな, ⇧Tab, ↑ | Previous entry; from entry 0 into the negative entries (§6.4) |
+| ⌫ | Takes back the last staged key, and the preedit is read again without it. With nothing staged, the app's |
 | F keys | Per the F-key bindings (§6.5); by default swallowed, doing nothing |
-| ⌥Space | `　` (U+3000, full-width space) |
-| 半角/全角 | **full-width**, applied to the unstaged text (the preedit) or else the selection |
+| ⌥Space | Commits the preedit, then `　` (U+3000, full-width space) |
+| 半角/全角 | **full-width**, applied to the staged text (the preedit, which stays staged in that width, typing going on after it) or else the selection |
 | ⇧半角/全角 | **half-width**, the same way |
 
 Rules that follow from the table:
@@ -212,9 +241,18 @@ Rules that follow from the table:
 - With a preedit, Tab / ⇧Tab cycle; they don't commit-then-tab. The "commit, then act" Tab only
   applies when **[decide]**: never (Tab always cycles when something is staged), or after the
   first cycle step? Proposed: Tab with a preedit always cycles; with none, it goes to the app.
+  As built: the proposal.
 - With **nothing staged**, Space, Enter, Esc, Tab, arrows and ⇧Enter go to the app unchanged
   (proposed; **[decide]** for ⇧Enter, which the table says is always swallowed). かな with nothing
-  staged does nothing.
+  staged does nothing. As built: as proposed, ⇧Enter included.
+- **Which keys are staged.** A key of the 48-key kana space is staged when a candidate has a meaning
+  for it (with ⇧ too; with ⇧⌥ where the layout defines it). Any other key, and ⌥ + a key without ⇧,
+  commits the preedit and goes to the app. Two layouts change this for their own keys: with only
+  search layouts in use, Space is part of the search and ⇧Space commits and types a space
+  ([150](layouts/150-symbols.md)); in bada roman, digits and punctuation commit the word and then
+  type themselves ([15](layouts/15-bada-roman.md)).
+- While a hanja list is open (bada's `hanja` action, [13](layouts/13-bada.md) §6), the menu keys move
+  in it, Enter and Space take the highlighted hanja, and Esc and ⌫ close it.
 - Esc **commits** (it doesn't cancel), as the table says. Recorded because most IMEs cancel on
   Esc.
 - Cmd / Ctrl shortcuts: commit first, then pass through (as JIS Korean §3.5).
@@ -240,16 +278,22 @@ The interpretations of the staged keys form one menu with **signed indexes**:
   reading, ⇧Tab once is hiragana, twice katakana.
 - **Optional, off by default** (owner, 2026-11-08): Settings → "Script forms below the top entry"
   (`script_forms`). Off, there are no negative entries: ⇧Tab stops at 0, and katakana is an ordinary
-  ranked entry among the kanji conversions. Hiragana and katakana are also F-key actions (§6.5).
+  ranked entry among the kanji conversions, the kana a conversion row (§11.2). Hiragana and katakana
+  are also F-key actions (§6.5).
 - This **replaces F6 / F7** as the way to get hiragana and katakana. JIS Moonshot's F6–F10 (hiragana,
   katakana, kanji, full-width, half-width) are **not** ported as fixed keys; the F keys are reserved
   for §6.5.
 - The menu shows the negative entries above entry 0 (a richer list than macOS's candidate window:
-  the shell draws it).
+  the shell draws it). It shows only when there is more than one entry, five rows at a time, under
+  the start of the preedit; it never appears in screen sharing, recordings or screenshots.
+- **Notes.** A row may carry a gray note at its right: romaji or the kana reading on Japanese rows
+  (§11.3), `typo?` on bada's typo suggestions, the word as typed on bada roman's dictionary rows, the
+  name on a search result.
 - **One method, at most two entries** (owner, 2026-11-07). Only one enabled method contributes
   negative entries, and it contributes at most two (−1, −2). The slot exists for Japanese script
-  override, but any method may offer it; the **user selects which method** in settings. Proposed
-  default: the lowest-id enabled method that offers them (20 Kana before 21 Romaji).
+  override, but any method may offer it; the **user selects which method** in settings ("Negative
+  menu entries"). The default, as built: the lowest-id enabled method that offers them (20 Kana before
+  21 Romaji). Today only 20 and 21 offer any.
 - Other conversions are **not** negative entries: half-width comes from ⇧半角/全角, the old F8–F10
   conversions from F-key actions (§6.5), and the plain English reading is a ranked entry (≥ 0)
   whenever QWERTY (0) is enabled. It ranks by `en-words.txt`: a common word (the list's head) over
@@ -278,7 +322,9 @@ conversion, so apps don't rely on them while a Japanese input source is on).
   | `fullwidth-latin` | F9 |
   | `halfwidth-latin` | F10 |
 
-  The "usual key" is only a hint for a settings preset; nothing is bound by default.
+  The "usual key" is only a hint for a settings preset; nothing is bound by default. Both Japanese
+  methods (20 Kana, 21 Romaji) publish these five; Latin is the keys as JIS QWERTY (for Romaji, the
+  letters typed). The settings window lists them under each method. Each lasts until the commit.
 - **The user binds keys to actions** in settings: each intercepted F key is one of
   - **swallowed** (the default): the key is eaten and does nothing;
   - **passthrough**: the key goes to the app unchanged;
@@ -286,19 +332,32 @@ conversion, so apps don't rely on them while a Japanese input source is on).
     act on, the key is swallowed.
 - **Intercept F keys** (setting, on by default): off, every F key passes through to the app, and no
   binding applies.
-- A settings preset "Japanese IME (F6–F10)" binds the five actions above to their usual keys.
+- A settings preset "Japanese IME (F6–F10)" binds the five actions above to their usual keys: a
+  button on the F Keys tab (it binds 20 Kana's, for the profile being edited).
+- **The actions, as built** (the settings window lists each as "method: action"):
+
+  | Method | Actions | Described in |
+  |---|---|---|
+  | 11, 12 | `commit`, `commit-bare` | §7.0 |
+  | 13 bada | `raw`, `prediction-1` … `prediction-5`, `qwerty-fullwidth`, `qwerty-halfwidth`, `hanja` | [layouts/13-bada.md](layouts/13-bada.md) §6 |
+  | 15 bada roman | `initials`, `vowels`, `finals`, `fullwidth-latin`, `halfwidth-latin` | [layouts/15-bada-roman.md](layouts/15-bada-roman.md) |
+  | 20, 21 | `hiragana`, `katakana`, `halfwidth-katakana`, `fullwidth-latin`, `halfwidth-latin` | above |
 - **Only F6–F10** are intercepted: a carry-over from Japanese input methods. Every other F key
   always goes to the app.
 - **Modifiers are up to the method.** The user binds plain F6–F10; what ⇧ / ⌥ / ⌃ + that F key does
   is decided by the method its plain key is bound to (a method may define modified actions, or
-  none). Unbound or undefined: swallowed, like the plain key.
+  none). Unbound or undefined: swallowed, like the plain key. As built no method defines any, so a
+  modified F key bound to an action is swallowed (one bound to passthrough still passes).
 - **Muhenkan mode passes F keys through**, always (no preedit, no methods).
 - With nothing staged, an action applies to nothing and the key is swallowed (a method may define
-  otherwise, e.g. act on the selection).
+  otherwise, e.g. act on the selection). **Staged text comes before the selection** (owner,
+  2026-11-11): the two rarely coexist, so an action that can take either (bada's `hanja`, bada
+  roman's jamo actions, 半角/全角) takes the staged text, and the selection only when nothing is
+  staged.
 
 ### 6.6 Henkan profiles (owner, 2026-11-08)
 
-Optional, **off by default**: Settings → Henkan profiles. Three keys can each bring up henkan mode
+Optional, **off by default**: Settings → Profiles. Three keys can each bring up henkan mode
 with its own set of henkan candidates:
 
 | Key | Profile | Default |
@@ -352,6 +411,11 @@ its LED and every app follow), and undoes the toggle macOS makes on its own; the
 is macOS's. In another input source than bada ime's (ABC in a password field) it's plain Caps Lock.
 macOS's "Use Caps Lock to switch to and from ABC" must be off.
 
+The Caps Lock state bada ime sets lights the LED, but macOS's key events don't carry it. So in
+muhenkan, while Caps Lock is on, the input method types the capitals itself (a letter key without
+⌘ ⌃ ⌥: its capital, as ABC has it), and the two keylayouts have a Caps Lock layer for the Keyboard
+Viewer (§4.1).
+
 One setting, three behaviours:
 
 | Setting | Caps Lock | ⇧ ⌃ ⌥ ⌘ + Caps Lock |
@@ -368,29 +432,42 @@ When it misbehaves on a keyboard: [troubleshooting.md](troubleshooting.md#caps-l
 
 | Path | What |
 |---|---|
-| `/engine` | Platform-independent core (Rust, `bada-engine`): layouts, composition, the menu, F-key actions. Event in → output out, no I/O. C ABI in `include/bada.h` (JSON in and out) |
-| `/engine/data` | Shipped data: Korean word counts (`ko-words.tsv`, built by `engine/tools/build_ko_words.py`) and the typo model built from them (`ko-jamo-4gram.bin`), English words, hanja, OECD names, Japanese words and kanji conversion (`ja-words.txt`, `kanji.bin`, `ja-kana-native.txt`, `ja-common-words.txt`), the symbol, emoji and Unicode name lists of 150 and 151, with their licenses |
-| `/mac` | InputMethodKit shell (Swift, no Xcode): the two input modes (§4.1), the 英数 / かな key tap, the menu window, the settings window |
-| `/docs` | This spec, the Bada layout design, a page per layout and combination examples (`docs/layouts`, images in `docs/images/layouts`), the layout 13 design history and its saved candidates (`docs/bada-history.md`, `docs/history/`) |
-| `/tools/analysis`, `/tools/render`, `/tools/editor`, `/tools/practice`, `/tools/setup-page` | Corpus analysis and layout optimisation, the layout renderer (with combinations, and `export_png.py` for the docs' images), the layout editor, a key drill, a page of a setup's key legends per mode |
-| `/utils/learner-app` | A local page that logs your typing and exports it for your dictionary (§8) |
+| `/engine` | Platform-independent core (Rust, `bada-engine`): layouts, composition, the menu, F-key actions, the user dictionary. Event in → output out, no I/O. C ABI in `include/bada.h` (JSON in and out; bada-compatible v1.1, §9) |
+| `/engine/data` | Shipped data: Korean word counts (`ko-words.tsv`, built by `engine/tools/build_ko_words.py`) and the typo model built from them (`ko-jamo-4gram.bin`), English words (`en-words.txt`, with its `#! rare` section), hanja, OECD names, Japanese words and kanji conversion (`ja-words.txt`, `kanji.bin`, `ja-kana-native.txt`, `ja-common-words.txt`), layout 15's English dictionary (`en-ko/`: common words, brand names by country, the order of brands that share a name) and romaji shortcuts (`ja-shortcuts.tsv`), the symbol, emoji and Unicode name lists of 150 and 151 (`unicode-aliases.tsv`: the hand-written colloquial names), with their licenses. The scripts that build them: `/engine/tools` |
+| `/mac` | InputMethodKit shell (Swift, no Xcode): the two input modes (§4.1), the 英数 / かな key tap, the HID keys (§6.6) and Caps Lock (§6.7), the menu window, the settings window, the user dictionary's file (§8), the state for other apps (§9), the Keyboard Viewer's layouts (§4.1) |
+| `/docs` | This spec; a page per layout, each with its rules, design principles and history, and combination examples (`docs/layouts`, images in `docs/images/layouts`; the Bada layout and its design history: `docs/layouts/13-bada.md`, its saved candidates: `docs/history/`); the typing robot (`robot.md`); the dictionary contract, its schema and an example; the interactive setup prompts (`interactive-prompts/`); `troubleshooting.md`; an example setup (`examples/hhkb-profiles`) |
+| `/tools/analysis`, `/tools/render`, `/tools/editor`, `/tools/practice`, `/tools/setup-page` | Corpus analysis and layout optimisation, the layout renderer (with combinations, and `export_png.py` for the docs' images), the layout editor, a key drill, a page of a setup's key legends per mode ([examples/hhkb-profiles](examples/hhkb-profiles/README.md)) |
+| `/tools/icon`, `/tools/social-preview` | The app icon's PNGs and the repository's social preview, rendered into `docs/images` |
+| `/utils/learner-app` | A local page that logs your typing and exports it for your dictionary (§8), and a copy-practice page |
 | `/web` | The web simulator ([bada.sjun.me](https://bada.sjun.me)): the engine compiled to WebAssembly behind a text field, the Mac shell's key handling, menu and settings window ported to the page (settings in the browser's local storage, the same `bada-settings/1` file), and the keyboard drawn by §7.1's renderer. Deployed by `.github/workflows/deploy-web.yml`. `/learn` redirects to Learn Korean, [learn.sjun.me](https://learn.sjun.me) (team-mirae/learn-korean): typing lessons on a copy of this engine: the learner picks bada roman (15), 2-set (10) or bada (13) and learns it by typing; also a public MCP server |
 
 All behaviour lives in the engine; the shell translates keys, switches input sources and applies
 the output.
 
-- Engine: `cargo test` in `/engine` (unit tests, plus `tests/real_data.rs` on the shipped data).
-  The typing robot, `tests/robot.rs`, runs in release builds only: [robot.md](robot.md).
-- macOS: `make` in `/mac` builds `build/BadaIME.app` (universal); `make install` copies it to
+- Engine: `cargo test` in `/engine` (unit tests, plus `tests/real_data.rs` on the shipped data and
+  `tests/state.rs` for §9's `staged`). The typing robot, `tests/robot.rs`, runs in release builds
+  only: [robot.md](robot.md).
+- macOS: `make` in `/mac` builds `build/BadaIME.app` (universal, so Rust needs both the
+  `aarch64-apple-darwin` and `x86_64-apple-darwin` targets; it builds against the macOS 26 SDK or
+  later, for the menu's glass panel, and runs on macOS 13 or later); `make install` copies it to
   `~/Library/Input Methods`, registers it (enabling both modes on a first install) and adds a login
-  agent so the 英数 / かな tap runs from login. Then follow §4.1's setup.
+  agent so the 英数 / かな tap runs from login. Then follow §4.1's setup. `make dist` zips the app
+  (what `.github/workflows/mac.yml` builds when a push touches the engine or the shell, and attaches
+  to a `v*` tag's release; `mac/tools/install-ci.sh` installs a run's app); `make uninstall` removes
+  it; `make SENSITIVE=1` builds layout 15's sensitive words in. `mac/tools/test_profile_keys.sh`
+  checks §6.6's language-key decisions.
+- Web: `node web/build.mjs` builds `web/dist`, `node web/test/smoke.mjs` types on the engine as
+  WebAssembly ([web/README.md](../web/README.md)).
 - Bundle id `me.sjun.inputmethod.Bada`, modes `….Muhenkan` and `….Henkan`.
+- Diagnostics: `defaults write me.sjun.inputmethod.Bada DiagnosticLog -bool true` turns on a log of
+  the input method's own events, `~/Library/Logs/BadaIME.log`
+  ([troubleshooting.md](troubleshooting.md)).
 
-### 7.0 What v0.1 builds
+### 7.0 What 0.2.2 builds
 
-- Layouts **0** (QWERTY), **10** (2-set), **11** (JIS Korean), **12** (JIS Moonshot), **13** (Bada, bada-layout.md), **14** (3-set JIS), **15** (bada roman), **18** (Korean Roman), **19** (Kana Korean),
-  **20** (Kana), **21** (Romaji), **150** (Symbols) and **151** (Unicode). 20 and 21 convert to kanji (Mozc's dictionary, docs/japanese.md)
-  and give the negative entries (−1 hiragana, −2 katakana); their menu rows carry romaji / kana notes.
+- Layouts **0** (QWERTY), **10** (2-set), **11** (JIS Korean), **12** (JIS Moonshot), **13** (Bada, layouts/13-bada.md), **14** (3-set JIS), **15** (bada roman), **18** (Korean Roman), **19** (Kana Korean),
+  **20** (Kana), **21** (Romaji), **150** (Symbols) and **151** (Unicode). 20 and 21 convert to kanji (Mozc's dictionary, §11)
+  and, with script forms on, give the negative entries (−1 hiragana, −2 katakana); their menu rows carry romaji / kana notes.
 - 11 and 12 are the Korean readings only, deterministic: the keys, implied ㅇ, the double press and
   ⇧ + vowel of JIS Korean §3–§4.2, and JIS Moonshot §9's slots and ⇧ + consonant. Not ported: their
   predictions, hanja, fixed F6–F10, and JIS Korean's ⇧Z as F10 (⇧Z is ㅋ here). Both publish two
@@ -398,12 +475,36 @@ the output.
   whatever ranks first) and `commit-bare` (the same with the implied ㅇ dropped, as JIS Korean's F6:
   ㅏ → ㅏ, 가어 → 가ㅓ, 와 → ㅘ; a typed or asked-for ㅇ and a syllable with a final stay).
 - Ranking is rules over word counts (a known word beats an unknown one), **not yet n-grams**.
-  Layout 13 adds typo suggestions under its reading from a jamo 4-gram model (bada-layout.md §5). It
-  orders the readings of the enabled layouts; layout 13 itself reads its keys one way only.
+  Layout 13 adds typo suggestions under its reading from a jamo 4-gram model (layouts/13-bada.md §5). It
+  orders the readings of the enabled layouts; layout 13 itself reads its keys one way only. Layout
+  15 uses the same model to choose among readings when none is a known word. Every reading gets a
+  score, and the menu is the readings by score, one row per text:
+
+  | Reading | Score |
+  |---|---|
+  | A known Korean word (any Korean layout; counts from `ko-words.tsv` and the user's dictionary) | 100 + ln(count) |
+  | A Japanese reading that is a known word (20, 21): the user's own words, then its conversions and the kana, in §11.2's order | 92 and just above |
+  | A common English word (0) | 90 |
+  | A rare English word (0) | 85 |
+  | Korean in whole syllables, but no known word | 80 |
+  | A Japanese reading that is no known word, and its conversions | 70 and just above |
+  | A search as typed, then what it finds (150, 151) | 60, 59 |
+  | Korean with loose jamo left over | 40 |
+  | Letters that are no English word (0); a Japanese reading with a stray ゛ ゜ or Latin letters; bada roman's reading of letters after a digit or symbol | 30 |
+  | Other QWERTY text (digits, symbols) | 20 |
+
+  The layout's weight (§5.3) multiplies its scores; a tie goes to the layout earlier among the
+  candidates. Layouts 15, 18 and 19 rank their own other readings beside this
+  ([15](layouts/15-bada-roman.md), [18](layouts/18-korean-roman.md), [19](layouts/19-kana-korean.md)). A
+  soft negative word of the user's loses 60; a strong one is left out (§8).
 - HYPER+かな and MEH+かな both switch to the other mode: with one muhenkan layout and one henkan
   there is nothing else to go back to or cycle through. The user cycle order (§5.3) isn't in the
   settings window yet.
-- Default settings: henkan candidates = [13]; F6–F10 intercepted and swallowed, nothing bound.
+- Default settings: henkan candidates = [13]; muhenkan layout 0; F6–F10 intercepted and swallowed,
+  nothing bound; profiles and script forms off; every weight 1; layout 15's romaji shortcuts on; Caps
+  Lock toggle, ALL CAPS.
+- The web simulator (`/web`) runs the same engine and the same settings; what the page adds or
+  lacks is in [web/README.md](../web/README.md).
 
 ### 7.1 Keyboards drawn by the renderer
 
@@ -421,7 +522,8 @@ Both have Control left of A. Bottom rows (1u each but the space):
 strong), for every layout. The contract is [dictionary-contract.md](dictionary-contract.md), with a JSON Schema and an example; the
 interactive setup is [interactive-prompts/](interactive-prompts/README.md). Loaded at launch and on
 the next activation after the file changes; the input menu's "Open Dictionary Folder" opens its
-folder.
+folder, and Settings → Dictionary says what was loaded, or why it wasn't. One dictionary serves the
+whole process (every text field's engine). `utils/learner-app` builds one from your own typing.
 
 ## 9. State for other apps (bada-compatible v1.1)
 
@@ -473,3 +575,60 @@ Collected from above:
 5. §6.3 Tab: cycle versus commit-then-tab; keys with nothing staged.
 6. ~~§6.4 negative entries, menu ends~~: settled 2026-11-07.
 7. ~~§6.5 F keys~~: settled 2026-11-07.
+
+## 11. Japanese (layouts 20 and 21)
+
+What JIS Kana ([20](layouts/20-kana.md)) and JIS Romaji ([21](layouts/21-romaji.md)) have in common:
+how their readings rank, kanji conversion and the menu's notes. Their keys and spellings are on their
+pages; their script forms are in §6.4 and their F-key actions in §6.5. Code: `engine/src/japanese.rs`;
+script forms and F-key actions in `engine/src/engine.rs`.
+
+### 11.1 Ranking
+
+A reading that is a known word (`engine/data/ja-words.txt`, JIS Moonshot's hand-written list; a
+kana-native word; or a Japanese word in the user's dictionary) scores above an unknown Korean
+composition; an unknown one below it; one with a stray ゛ ゜ or pending Latin letters low. So with
+13 and 21 enabled, `konnichiha` shows こんにちは and D H G R H V H B E M A H still shows 감사합니다.
+The scores are in §7.0's table. A word of the user's dictionary counts in whatever script it's
+written, hiragana, katakana or kanji (§11.2).
+
+### 11.2 Kanji conversion
+
+Both layouts convert their kana reading to kanji (`engine/src/kanji.rs`, ported from JIS Moonshot:
+a word lattice over the kana, word costs plus part-of-speech connection costs, at most 40 kana).
+The data is `engine/data/kanji.bin` (11 MB), built by `engine/tools/kanji/build_kanji.py` from
+**Mozc's open-source dictionary** (pinned commit); notices in `engine/data/LICENSE-mozc.txt`.
+On Mozc's evaluation set (`engine/tests/data/kanji-evaluation.tsv`): 69% exact, 79% in the top 3.
+
+- The menu (§6.4) is **0 and forward: the conversions, cheapest first, with the kana among
+  them**; with script forms on, also **−1 hiragana, −2 katakana**. So typing shows the top
+  conversion (わたしはがくせいです → 私は学生です), Tab the other conversions.
+- **Where the kana goes** (owner, 2026-11-08): where conversion ranks it; a known word's kana
+  (`ja-words.txt`, or kana-native) no lower than second (ぼく: 僕 may come first, ぼく next); a
+  **kana-native** word's kana first. Otherwise last.
+- **Kana-native words** (`engine/data/ja-kana-native.txt`, built into the engine): about 870 words
+  written in kana at least 60% of the time in Tatoeba's Japanese sentences (この, その, こと, もの,
+  あなた, ちょっと, ありがとう), counted by `engine/tools/build_kana_native.py` with the robot's test
+  sentences left out. Conversion treats their kana as one below their cheapest kanji, so phrases
+  keep them in kana too (このほん → この本, not 個の本). The cost: Mozc's evaluation set lost 5 exact
+  sentences of 613 (431 → 426).
+- **Common words** (`engine/data/ja-common-words.txt`, built into the engine): the 3,000 most common
+  words of Tatoeba's Japanese sentences not written in kana (一, 死, 原因, ケン), with their readings,
+  from the same script. When the whole reading is one, its three most common words come under
+  the first conversion and a known word's kana (ひ: 日, ひ, 火): conversion of a lone short word ranks them low (いち → 1, し → し), and
+  the typing robot's `production` bar needs every common word in the first 5 rows (robot.md).
+  Phrases and sentences are converted as before: the lattice's costs aren't changed, so に stays
+  a particle in 東京に.
+- **The user's words** ([dictionary-contract.md](dictionary-contract.md)) come first: a positive
+  Japanese word that is the kana typed, its katakana or one of its conversions (looked for among the
+  first 32, further down than the menu lists) or common words. Of several, the most used first.
+- Up to six conversions; one that is just the kana isn't repeated, nor its katakana with script
+  forms on.
+- Unknown or broken readings (a stray ゛, pending Latin letters) aren't converted.
+
+### 11.3 Menu notes (owner, 2026-11-07)
+
+Each Japanese row carries a gray note at its right: **kana rows their romaji** (Hepburn as IMEs spell
+it: らーめん ra-men, がっこう gakkou, しんよう shin'you; `engine/src/romaji.rs`), **kanji rows their
+kana reading** (私は学生です わたしはがくせいです). Japanese rows are drawn in Hiragino Sans, so kanji
+take their Japanese forms.
