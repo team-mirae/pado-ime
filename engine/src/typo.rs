@@ -1,4 +1,4 @@
-//! Typo suggestions for layout 13 (bada-layout.md §5): a noisy channel.
+//! Typo suggestions for layout 13 (docs/layouts/13-bada.md §5): a noisy channel.
 //!
 //! - **Language model:** a jamo 4-gram model over Korean words (`ko-jamo-4gram.bin`, built by
 //!   `tools/build_jamo_lm.py`), Witten–Bell interpolated. It scores how Korean a reading looks.

@@ -6,7 +6,7 @@ Japanese)?", on law texts and everyday sentences.
 
     cd engine && cargo test --release --test robot -- --nocapture
 
-About 25 s; release builds only (`#[cfg_attr(debug_assertions, ignore)]`: in debug it takes minutes). The report, with failing examples:
+About half a minute; release builds only (`#[cfg_attr(debug_assertions, ignore)]`: in debug it takes minutes). The report, with failing examples:
 `engine/target/robot-report.md`. `ROBOT_LIMIT=n` types only the first n distinct items of each corpus.
 
 ## What it knows
@@ -17,7 +17,8 @@ spelling tables. It plans the keys from that alone, presses them on a fresh engi
 layout enabled, and reads the screen: what was committed and the marked text, and the menu.
 
 A second test, `json_matches_engine`, checks every key of every file against the engine, so the
-robot's plans are the layouts' real keys.
+robot's plans are the layouts' real keys. The searches (150, 151) declare no language, so they have
+key maps and no corpora.
 
 ## How it types
 
@@ -29,12 +30,13 @@ robot's plans are the layouts' real keys.
   doubles), and whole-syllable keys (`a`, `n`). Fewest presses first, unshifted first. It keeps up to
   four plans whose screen shows the word so far, exactly; a person checks each syllable as it
   appears. A layout must type **every** word.
-- **roman** (18): the word in the file's spelling table, syllables run together, then split by the
-  break character if that fails.
+- **roman** (15, 18): the word in the file's spelling table (Revised Romanization, letter by
+  letter), syllables run together, then split by the file's break character if that fails (`-` in
+  18, `;` in 15).
 - **kana** (20): each kana on its key; a voiced kana as its plain kana and ゛ (゜).
 - **romaji** (21): the reading in the spelling table, two kana at once where the table has them;
   っ doubles the next consonant, ん is nn, or `n'` before a vowel, y or n (`zen'in` ぜんいん: after
-  `nn` a vowel starts the next kana, japanese.md).
+  `nn` a vowel starts the next kana, [layouts/21-romaji.md](layouts/21-romaji.md)).
 - **transcription** (19): from the file's `transcription` map. Each syllable starts from a kana
   key's syllable (た 타); its initial is moved along the **tenseness series** (ㄱ/ㅋ/ㄲ, ㄷ/ㅌ/ㄸ,
   ㅂ/ㅍ/ㅃ, ㅈ/ㅊ/ㅉ, ㅅ/ㅆ) by the modifiers: っ before the kana raises it to tense, ゛ after it lowers
@@ -45,8 +47,8 @@ robot's plans are the layouts' real keys.
   against the preedit; the whole word must show or be in the first 5 rows (the menu offers a
   reading only when it spells a known word). At most 80 screen checks per word.
 
-For converting layouts (18, 19, 20, 21) the wanted text must show, or be among the first **5** rows
-of the menu. The report lists, per layout and corpus, the syllables it couldn't type, most frequent
+For converting layouts (15, 18, 19, 20, 21) the wanted text must show, or be among the first **5**
+rows of the menu. The report lists, per layout and corpus, the syllables it couldn't type, most frequent
 first.
 
 ## Reliability
@@ -71,10 +73,10 @@ push to main and every pull request, and puts the report in the run's summary.
 |---|---|---|
 | 00 | english | perfect |
 | 10–14 | korean | perfect |
-| 15 | korean | production (the English dictionary and romaji shortcuts aren't typed) |
-| 18 | korean | production |
-| 19 | korean | experimental (69% on Common Voice; the gaps are open questions in [kana-korean.md](kana-korean.md)) |
-| 20, 21 | japanese_kana, japanese_romaji | production (every common word; 87% of the law texts, 93% of Tatoeba) |
+| 15 | korean | production (99.7% or more of each corpus, 96–99.9% in the first row; the English dictionary and romaji shortcuts aren't typed) |
+| 18 | korean | production (99.5% or more of each corpus; 63–83% in the first row, the rest from the menu) |
+| 19 | korean | experimental (69% on Common Voice; the gaps are open questions in [layouts/19-kana-korean.md](layouts/19-kana-korean.md#open-questions)) |
+| 20, 21 | japanese_kana, japanese_romaji | production (every common word; 87.5% of the law texts, 93% of Tatoeba) |
 
 ## How a word fails
 

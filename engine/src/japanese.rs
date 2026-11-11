@@ -1,8 +1,9 @@
-//! Japanese layouts, deterministic for now (no kanji): 20 JIS Kana (one kana per key, ゛ ゜ attach
+//! Japanese layouts, their kana readings: 20 JIS Kana (one kana per key, ゛ ゜ attach
 //! to the kana before them) and 21 JIS Romaji (romaji to kana, as Japanese IMEs spell it).
+//! Kanji conversion of the reading is in kanji.rs.
 //! Kana tables and the dakuten automaton are ported from JIS Moonshot (engine/src/kana.rs).
 //! Their script forms (spec §6.4: −1 hiragana, −2 katakana) and F-key actions (§6.5) are in
-//! engine.rs. See docs/japanese.md.
+//! engine.rs. See docs/layouts/20-kana.md, docs/layouts/21-romaji.md and docs/spec.md §11.
 
 use crate::key::Key;
 use crate::layout::{Press, jis_char};

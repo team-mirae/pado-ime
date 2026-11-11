@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "bada-engine"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "serde",
  "serde_json",
@@ -12,7 +12,7 @@ dependencies = [
 
 [[package]]
 name = "bada-web"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "bada-engine",
  "serde",

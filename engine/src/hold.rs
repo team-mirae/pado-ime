@@ -22,7 +22,7 @@ impl Held {
     }
 }
 
-/// The variants of a letter (lower case, as typed in the mode, spec §3.6.4), in list order
+/// The variants of a letter (lower case, as typed in the mode, jis-korean spec §3.6.4), in list order
 /// (numbered 1, 2, … in the list), or `None` for letters without any. macOS's English (US)
 /// press-and-hold set.
 pub fn variants(letter: char, shift: bool) -> Option<&'static [char]> {

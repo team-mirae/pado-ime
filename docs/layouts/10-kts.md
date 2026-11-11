@@ -25,8 +25,16 @@
 Legends: bottom of a key unshifted, top with Shift; small grey, the JIS legend. Colours: blue initial or
 consonant, orange final, green vowel, purple syllable, maroon kana.
 
+## What it is
+
 The standard Korean 2-set (두벌식, KS X 5002) on the JIS letter keys. The number row and
 symbol keys keep their JIS characters.
+
+It's Korea's national standard as it is, so there is no design of bada ime's own here, and no
+history but the standard's: what a 2-set typist's hands know carries over key for key. Only its
+place on a JIS board is bada ime's.
+
+## Keys and rules
 
 - ⇧ gives the tense consonants ㅃ ㅉ ㄸ ㄲ ㅆ (Q W E R T) and ㅒ ㅖ (O P); every other ⇧ letter
   types the same jamo.
@@ -34,5 +42,9 @@ symbol keys keep their JIS characters.
   followed by a vowel moves to the next syllable, double finals from two keys (ㄴ ㅎ → ㄶ).
 - With QWERTY (0) enabled alongside it, English and Korean come from one mode
   ([QWERTY + KTS](combinations.md#qwerty--kts)).
+
+## Tools
+
+Key map: `10-kts.json`, written from the engine by `cargo run --example layout_json` (in `engine/`).
 
 Images: `python3 tools/render/export_png.py` (HHKB JIS). Interactive: open `tools/render/index.html`.

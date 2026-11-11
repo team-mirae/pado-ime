@@ -1,5 +1,5 @@
 // The keyboard on screen: tools/render's drawing (geometry from tools/render/keyboards.js, copied in
-// by web/build.sh), with the legends of the layouts in use, read from docs/layouts/*.json (written
+// by web/build.mjs), with the legends of the layouts in use, read from docs/layouts/*.json (written
 // by the engine: `cargo run --example layout_json`).
 
 const NS = "http://www.w3.org/2000/svg";

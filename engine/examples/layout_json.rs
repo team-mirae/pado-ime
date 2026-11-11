@@ -152,7 +152,7 @@ fn main() {
     write("11-korean-legacy.json", &korean(layout::LEGACY_KOREAN, "JIS Korean Legacy"));
     write("12-moonshot.json", &korean(layout::LEGACY_MOONSHOT, "JIS Moonshot"));
 
-    // 15: the letters as 18, its own keys (`,` ㅓ, `.` ㅡ, `:` ㅢ, `@` final ㅇ, x initial ㅇ, `;` the break).
+    // 15: the letters as 18, with its own keys (q ch, x an initial ㅇ, `;` the break, ¥ ₩, ⇧0 +, ⇧[ 「, ⇧] 」).
     let mut bada_roman = layout(15, "bada roman", &[("korean", "production")], "roman",
         keys(|k, s| bada::bada_roman::token(k, s).map(|(t, r)| vec![tok(t, r)]).unwrap_or_default()));
     let mut table = roman_table();

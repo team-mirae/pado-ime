@@ -93,7 +93,7 @@ def cell_of(tokens):
     return {"t": "/".join(texts), "c": c}
 
 def bada13():
-    """Layout 13 as the engine types it (engine/src/layout.rs, docs/bada-layout.md)."""
+    """Layout 13 as the engine types it (engine/src/layout.rs, docs/layouts/13-bada.md)."""
     d = json.load(open(os.path.join(DOCS, "13-bada.json")))
     keys = {}
     for code in list(JIS) + ["Key"+c for c in LETTERS]:
@@ -133,7 +133,7 @@ def search(id_, name, note):
     return out
 
 def roman18():
-    """Layout 18: Korean romanization (docs/korean-roman.md)."""
+    """Layout 18: Korean romanization (docs/layouts/18-korean-roman.md)."""
     t = {}
     for c in LETTERS:
         t["Key"+c] = (c.lower(), c.lower())
@@ -176,7 +176,7 @@ def roman15():
                      "Number and symbol keys type their JIS characters (¥ ₩; ⇧0 +, ⇧[ 「, ⇧] 」).", keys=keys)
 
 def kana19():
-    """Layout 19 as the engine types it (engine/src/kana_korean.rs, docs/kana-korean.md)."""
+    """Layout 19 as the engine types it (engine/src/kana_korean.rs, docs/layouts/19-kana-korean.md)."""
     d = json.load(open(os.path.join(DOCS, "19-kana-korean.json")))
     keys = {}
     for code in list(JIS) + ["Key"+c for c in LETTERS]:
@@ -193,7 +193,7 @@ def kana19():
                      "Shown: the table's reading; offered too: う-row ㅡ or a final (ク ㄱ, ム ㅁ, ル ㄹ, プ ㅂ), お-row ㅓ, ん ㅇ, っ as ㅅ (はんぐく → 한국).", keys=keys)
 
 def romaji21():
-    """Layout 21: romaji (docs/japanese.md). Letters compose; symbol keys give Japanese punctuation."""
+    """Layout 21: romaji (docs/layouts/21-romaji.md). Letters compose; symbol keys give Japanese punctuation."""
     t = {}
     for c in LETTERS:
         t["Key"+c] = (c.lower(), "Ａ" if c == "A" else chr(0xFF21 + ord(c) - 65))

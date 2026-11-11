@@ -246,7 +246,7 @@ function pickFile(onText) {
 }
 
 function dictionaryPage(s) {
-  const text = h("textarea", { class: "code", value: api.dictionary, placeholder: '{"format": "bada-dictionary/1", …}', "aria-label": "Your dictionary (JSON)" });
+  const text = h("textarea", { class: "code", value: api.dictionary, placeholder: '{"format": "bada-dictionary", "version": 1, "positive": [{"word": "…"}], "negative": []}', "aria-label": "Your dictionary (JSON)" });
   const status = api.dictStatus;
   return [
     heading("Your dictionary"),

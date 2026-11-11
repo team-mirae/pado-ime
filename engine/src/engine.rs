@@ -1,5 +1,5 @@
 //! The engine: muhenkan and henkan modes (spec §4), the signed suggestion menu (§6.4), the keys
-//! (§6), F-key actions (§6.5) and Bada's actions (bada-layout.md §6).
+//! (§6), F-key actions (§6.5) and Bada's actions (docs/layouts/13-bada.md §6).
 //!
 //! Event in → output out. The shell owns input-source switching (英数, かな, HYPER/MEH+かな) and
 //! the host text; the engine says what to commit, what to show and whether it took the key.
@@ -69,6 +69,10 @@ const SEARCH_RESULTS: usize = 40;
 const TYPO_SUGGESTIONS: usize = 3;
 /// Japanese: rows given to a reading's most common words (`ja-common-words.txt`).
 const COMMON_ROWS: usize = 3;
+/// Japanese: conversions of a reading the menu lists, at most.
+const CONVERSIONS: usize = 6;
+/// Japanese: how far down the conversions the user's own words are looked for.
+const USER_CONVERSIONS: usize = 32;
 
 /// A henkan profile (§6.6): its own candidates, or a link to another profile.
 #[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
@@ -111,11 +115,11 @@ pub const ACTIONS: &[(u32, &str, &str)] = &[
     (
         BADA,
         "hanja",
-        "Hanja: selection, else staged text, else OECD countries",
+        "Hanja: staged text, else selection, else OECD countries",
     ),
-    (BADA_ROMAN, "initials", "Initial consonants only: selection, else staged text (한국 → ㅎㄱ)"),
-    (BADA_ROMAN, "vowels", "Vowels only: selection, else staged text (한국 → ㅏㅜ)"),
-    (BADA_ROMAN, "finals", "Final consonants only, syllables without one dropped: selection, else staged text (한국 → ㄴㄱ)"),
+    (BADA_ROMAN, "initials", "Initial consonants only: staged text, else selection (한국 → ㅎㄱ)"),
+    (BADA_ROMAN, "vowels", "Vowels only: staged text, else selection (한국 → ㅏㅜ)"),
+    (BADA_ROMAN, "finals", "Final consonants only, syllables without one dropped: staged text, else selection (한국 → ㄴㄱ)"),
     (BADA_ROMAN, "fullwidth-latin", "Full-width Latin (the keys as QWERTY)"),
     (BADA_ROMAN, "halfwidth-latin", "Half-width Latin (the keys as QWERTY)"),
     (LEGACY_KOREAN, "commit", "Commit as typed (this layout's reading, no ranking)"),
@@ -584,7 +588,7 @@ impl Engine {
                 }
                 KANA_KOREAN | KOREAN_ROMAN => {
                     // The table's reading shows; every other pronunciation that spells a known word is
-                    // offered under it, most frequent first (docs/kana-korean.md, "Readings").
+                    // offered under it, most frequent first (docs/layouts/19-kana-korean.md, "Readings").
                     let all = if id == KANA_KOREAN {
                         crate::kana_korean::readings(&self.presses, 4096)
                     } else {
@@ -747,9 +751,30 @@ impl Engine {
                     let loose = text.contains(japanese::DAKUTEN)
                         || text.contains(japanese::HANDAKUTEN)
                         || text.chars().any(|c| c.is_ascii_alphabetic());
-                    let known = self.data.is_japanese(&text)
-                        || self.data.is_kana_native(&text)
-                        || user.as_ref().is_some_and(|u| u.count(Language::Japanese, &text) > 0);
+                    // The user's Japanese words (docs/dictionary-contract.md) that the reading
+                    // writes, in whatever script they are: the kana typed, its katakana, one of its
+                    // conversions (looked for further down than the menu lists) or a common word
+                    // read so. The most used first.
+                    let kata = japanese::katakana(&text);
+                    let own = user.as_ref().filter(|u| u.has_positive(Language::Japanese));
+                    let conversions = match &self.data.kanji {
+                        Some(kanji) if !loose => kanji.convert(&text, if own.is_some() { USER_CONVERSIONS } else { CONVERSIONS }),
+                        _ => Vec::new(),
+                    };
+                    let mut mine: Vec<(&str, u32)> = Vec::new();
+                    if let Some(u) = own {
+                        let forms = [text.as_str(), kata.as_str()].into_iter()
+                            .chain(conversions.iter().map(|c| c.0.as_str()))
+                            .chain(self.data.common_japanese(&text).iter().map(String::as_str));
+                        for form in forms {
+                            let count = u.count(Language::Japanese, form);
+                            if count > 0 && !mine.iter().any(|m| m.0 == form) {
+                                mine.push((form, count));
+                            }
+                        }
+                        mine.sort_by(|a, b| b.1.cmp(&a.1));
+                    }
+                    let known = self.data.is_japanese(&text) || self.data.is_kana_native(&text) || !mine.is_empty();
                     let score = if known {
                         92.0
                     } else if loose {
@@ -757,26 +782,26 @@ impl Engine {
                     } else {
                         70.0
                     };
-                    // Kanji conversions (docs/japanese.md), each with the kana reading as its note,
+                    // Kanji conversions (docs/spec.md §11.2), each with the kana reading as its note,
                     // above the kana itself. The kana goes where conversion ranks it (kana-native
                     // words convert to kana: この, ちょっと), a known word's no lower than second
                     // (あなた under 貴方), a kana-native word first.
                     let mut kana_score = score + tie;
                     if !loose {
-                        if let Some(kanji) = &self.data.kanji {
+                        if self.data.kanji.is_some() {
                             let mut row = 0;
-                            for (conv, _) in kanji.convert(&text, 6) {
+                            for (conv, _) in conversions.iter().take(CONVERSIONS) {
                                 let at = score + tie + 0.5 - 0.01 * row as f64;
-                                if conv == text {
+                                if *conv == text {
                                     kana_score = kana_score.max(at + 0.001);
                                     continue;
                                 }
                                 // Its katakana is a row already when script forms are on (−2).
-                                if self.settings.script_forms && conv == japanese::katakana(&text) {
+                                if self.settings.script_forms && *conv == kata {
                                     continue;
                                 }
                                 entries.push(Entry {
-                                    text: conv,
+                                    text: conv.clone(),
                                     score: at,
                                     note: text.clone(),
                                     japanese: true,
@@ -804,6 +829,22 @@ impl Engine {
                             if self.data.is_kana_native(&text) {
                                 kana_score = kana_score.max(score + tie + 0.6);
                             }
+                        }
+                    }
+                    // The user's own words come first, the most used at the top.
+                    for (k, (word, _)) in mine.iter().enumerate() {
+                        let at = score + tie + 0.7 - 0.001 * k as f64;
+                        if *word == text {
+                            kana_score = kana_score.max(at);
+                        } else {
+                            entries.push(Entry {
+                                text: word.to_string(),
+                                score: at,
+                                note: text.clone(),
+                                japanese: true,
+                                origin: Origin::Other,
+                                source: None,
+                            });
                         }
                     }
                     entries.push(Entry::kana(text, kana_score));
@@ -865,7 +906,7 @@ impl Engine {
         entries.sort_by(|a, b| b.score.total_cmp(&a.score));
         let mut seen = std::collections::HashSet::new();
         entries.retain(|e| seen.insert(e.text.clone()));
-        // Typo suggestions (bada-layout.md §5): right under layout 13's reading, never above it
+        // Typo suggestions (docs/layouts/13-bada.md §5): right under layout 13's reading, never above it
         // and never first.
         if let Some(lm) = self.data.lm.as_ref().filter(|_| enabled.contains(&BADA)) {
             if let Some(at) = entries.iter().position(|e| e.origin == Origin::Composed(BADA)) {
@@ -1265,7 +1306,7 @@ impl Engine {
         self.action(method, action)
     }
 
-    /// A method's action (bada-layout.md §6; Japanese: docs/japanese.md).
+    /// A method's action (docs/layouts/13-bada.md §6; Japanese: docs/spec.md §6.5).
     pub fn action(&mut self, method: u32, action: &str) -> Output {
         let mut out = Output {
             consumed: true,
@@ -1504,7 +1545,7 @@ mod tests {
         // With ⌘ or ⌃ it is the app's shortcut.
         assert!(!e.key(IntlRo, Mods { meta: true, ..Mods::NONE }).consumed);
         // Henkan: 13 types ㅢ on it; its ⇧ is the unshifted JIS character `\` and ⇧⌥ the shifted
-        // one `_` (bada-layout.md §4).
+        // one `_` (docs/layouts/13-bada.md §4).
         let mut e = engine();
         e.set_mode(Mode::Henkan);
         assert_eq!(press(&mut e, IntlRo).preedit, "ㅢ");

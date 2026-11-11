@@ -2,13 +2,13 @@
 //!
 //! - 0 JIS QWERTY (muhenkan): every key types its JIS character.
 //! - 10 JIS KTS (henkan): standard 2-set on the letter keys, JIS symbols elsewhere.
-//! - 13 JIS Bada (henkan): `docs/layouts/13-bada.json`, deterministic (docs/bada-layout.md).
+//! - 13 JIS Bada (henkan): `docs/layouts/13-bada.json`, deterministic (docs/layouts/13-bada.md).
 //! - 14 JIS 3-set (henkan): `docs/layouts/14-3set-jis.json`, read as it is (docs/layouts/14-3set-jis.md).
 //! - 150 Symbols and 151 Unicode (henkan): searches (`search.rs`).
 //! - 15 bada roman (henkan): `bada_roman.rs`.
 //! - 18 JIS Korean Roman (henkan): `korean_roman.rs`.
 //! - 19 JIS Kana Korean (henkan): `kana_korean.rs`.
-//! - 20 JIS Kana and 21 JIS Romaji (henkan, deterministic for now): `japanese.rs`.
+//! - 20 JIS Kana and 21 JIS Romaji (henkan, with kanji conversion): `japanese.rs`, `kanji.rs`.
 
 use crate::hangul::{cluster, compose, compound};
 use crate::key::Key;
@@ -259,7 +259,7 @@ fn legacy_moonshot(key: Key, shift: bool) -> Option<Role> {
     })
 }
 
-/// Layout 13, unshifted (docs/layouts/13-bada.json, docs/bada-layout.md §2).
+/// Layout 13, unshifted (docs/layouts/13-bada.json, docs/layouts/13-bada.md §2).
 fn bada_base(key: Key) -> Option<Role> {
     use Key::*;
     let ini = |j| Role::Cons { ini: Some(j), fin: None };
@@ -319,7 +319,7 @@ fn bada_base(key: Key) -> Option<Role> {
 }
 
 /// Layout 13 with Shift: its shift layer where it has one; else a letter key types as unshifted
-/// and a number or symbol key types its JIS character (bada-layout.md §4).
+/// and a number or symbol key types its JIS character (docs/layouts/13-bada.md §4).
 fn bada(key: Key, shift: bool) -> Option<Role> {
     use Key::*;
     if !shift {
@@ -783,7 +783,7 @@ fn build(id: u32, presses: &[Press]) -> Option<Vec<Syl>> {
     Some(syls)
 }
 
-/// Bada's `raw` action (bada-layout.md §6): every key as its jamo, nothing composed.
+/// Bada's `raw` action (docs/layouts/13-bada.md §6): every key as its jamo, nothing composed.
 pub fn raw(id: u32, presses: &[Press]) -> String {
     presses
         .iter()

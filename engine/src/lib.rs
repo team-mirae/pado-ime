@@ -1,4 +1,4 @@
-//! Core engine of bada ime. Behaviour is defined in `docs/spec.md` and `docs/bada-layout.md`.
+//! Core engine of bada ime. Behaviour is defined in `docs/spec.md` and `docs/layouts/13-bada.md`.
 //!
 //! The engine is event in → output out, with no I/O: the macOS shell loads the data files, passes
 //! key events and host text in, and applies the [`Output`] to the text field.

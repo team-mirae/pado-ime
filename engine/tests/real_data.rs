@@ -237,7 +237,7 @@ fn colloquial_unicode_on_real_data() {
     assert!(!d.search.symbols("joo", &all, 10).iter().any(|x| x.0 == "㈜"));
 }
 
-/// Kana-native words (docs/japanese.md, "Where the kana goes"): their kana first, also inside a
+/// Kana-native words (docs/spec.md §11.2, "Where the kana goes"): their kana first, also inside a
 /// phrase; a known word's kana no lower than second.
 #[test]
 fn kana_native_words_stay_kana() {
@@ -278,6 +278,64 @@ fn kana_native_words_stay_kana() {
     assert_eq!(out.preedit, "東京に", "{:?}", out.menu);
 }
 
+/// The user's Japanese words count in whatever script they're written (docs/dictionary-contract.md):
+/// the kana typed, its katakana or a conversion of it, also one the menu wouldn't have listed.
+#[test]
+fn japanese_dictionary_words_in_kana_katakana_and_kanji() {
+    let d = data();
+    let engine = |layouts: &[u32], words: &[(&str, u32)]| {
+        let positive: Vec<String> =
+            words.iter().map(|(w, n)| format!(r#"{{"word": "{w}", "language": "japanese", "count": {n}}}"#)).collect();
+        let json = format!(r#"{{"format": "bada-dictionary", "version": 1, "positive": [{}]}}"#, positive.join(", "));
+        let (dict, summary) = bada::userdict::UserDict::parse(&json);
+        assert!(summary.ok, "{}", summary.error);
+        let mut e = Engine::new(d.clone());
+        e.pin_dictionary((!words.is_empty()).then(|| Arc::new(dict)));
+        let mut s = bada::Settings::default();
+        s.enabled = layouts.to_vec();
+        e.set_settings(s);
+        e
+    };
+    let romaji = |layouts: &[u32], words: &[(&str, u32)], letters: &str| {
+        let keys: Vec<(Key, bool)> =
+            letters.chars().map(|c| (Key::from_code(&format!("Key{}", c.to_ascii_uppercase())), false)).collect();
+        typed(&mut engine(layouts, words), &keys)
+    };
+    let rows = |out: &bada::Output| out.menu[out.zero..].to_vec();
+    // katakana: クバネテス isn't what conversion makes of くばねてす
+    assert_eq!(romaji(&[21], &[], "kubanetesu").preedit, "区バネテス");
+    let out = romaji(&[21], &[("クバネテス", 1)], "kubanetesu");
+    assert_eq!(out.preedit, "クバネテス", "{:?}", out.menu);
+    assert_eq!(out.notes[out.selected], "くばねてす");
+    // hiragana: first, not second
+    assert_eq!(romaji(&[21], &[("くばねてす", 1)], "kubanetesu").preedit, "くばねてす");
+    // kanji: the second conversion comes first
+    assert_eq!(romaji(&[21], &[], "satou").preedit, "佐藤");
+    assert_eq!(romaji(&[21], &[("砂糖", 1)], "satou").preedit, "砂糖");
+    // kanji the menu doesn't list (正幸 is far down the conversions of せいこう)
+    let out = romaji(&[21], &[], "seikou");
+    assert!(!rows(&out).contains(&"正幸".to_string()), "{:?}", out.menu);
+    assert_eq!(romaji(&[21], &[("正幸", 1)], "seikou").preedit, "正幸");
+    // several words of one reading: the most used first
+    let out = romaji(&[21], &[("砂糖", 5), ("サトウ", 9)], "satou");
+    assert_eq!(rows(&out)[..2], ["サトウ", "砂糖"], "{:?}", out.menu);
+    // its reading counts as a known word beside the other layouts: たけ is no known word, so
+    // English `take` shows; with 竹 in the dictionary, 竹 does
+    assert_eq!(romaji(&[0, 21], &[], "take").preedit, "take");
+    assert_eq!(romaji(&[0, 21], &[("竹", 1)], "take").preedit, "竹");
+    // the kana layout too: さ と う
+    let kana = [(Key::KeyX, false), (Key::KeyS, false), (Key::Digit4, false)];
+    assert_eq!(typed(&mut engine(&[20], &[]), &kana).preedit, "佐藤");
+    assert_eq!(typed(&mut engine(&[20], &[("砂糖", 1)]), &kana).preedit, "砂糖");
+    // script forms on: the user's katakana is still a ranked row, first
+    let mut e = engine(&[21], &[("サトウ", 1)]);
+    let mut s = e.settings().clone();
+    s.script_forms = true;
+    e.set_settings(s);
+    let keys: Vec<(Key, bool)> = "satou".chars().map(|c| (Key::from_code(&format!("Key{}", c.to_ascii_uppercase())), false)).collect();
+    assert_eq!(typed(&mut e, &keys).preedit, "サトウ");
+}
+
 /// Layout 15 on the shipped dictionary: the spelling's reading wins unless another is far better known
 /// (jong 종, not 적), and with no known word the jamo model picks the split (지역총괄의, 종속기업이).
 #[test]
@@ -304,8 +362,10 @@ fn typed_out(e: &mut Engine, keys: &[(Key, bool)]) -> String {
 #[test]
 fn english_beside_bada_roman() {
     let d = data();
+    // (love, told: common words from the generated part of en-words.txt, `word<TAB>count`)
     for (typed, want) in [("interpolate", "interpolate"), ("serendipity", "serendipity"), ("hanguk", "한국"),
-                          ("saram", "사람"), ("jongsok", "종속"), ("sarang", "사랑"), ("gamsa", "감사")] {
+                          ("saram", "사람"), ("jongsok", "종속"), ("sarang", "사랑"), ("gamsa", "감사"),
+                          ("love", "love"), ("told", "told")] {
         let mut e = Engine::new(d.clone());
         e.pin_dictionary(None);
         let mut s = bada::Settings::default();

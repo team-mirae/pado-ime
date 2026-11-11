@@ -22,8 +22,12 @@
 |---|---|---|---|
 | 14 | `Korean (3-set JIS)` | 세벌식 JIS, K3S-J | henkan, deterministic |
 
+## What it is
+
 A 3-set (세벌식) designed for JIS by the owner, from 세벌식 순아래 placed on JIS keys (the layout
-editor's 3-set presets). Source: `docs/layouts/14-3set-jis.json`, which the engine reads as it is.
+editor's 3-set presets).
+
+## Keys and rules
 
 - **모아쓰기, natively.** A syllable's jamo can come in any order, or together as a chord: ㅏ ㅎ ㄴ,
   ㅎ ㄴ ㅏ and ㄴ ㅏ ㅎ all give 한. Each syllable has one slot for its initial, its vowel and its
@@ -39,5 +43,9 @@ editor's 3-set presets). Source: `docs/layouts/14-3set-jis.json`, which the engi
 - **Compound vowels join** (ㅗ ㅏ → ㅘ); **double finals cluster** (ㄹ ㄱ → ㄺ).
 
 Examples: 한 M F S (or F M S, S F M) · 하나 M F H F · 까 K K F · 닭 U F W X.
+
+## Tools
+
+Key map: `14-3set-jis.json`, which the engine reads as it is.
 
 Images: `python3 tools/render/export_png.py` (HHKB JIS). Interactive: open `tools/render/index.html`.

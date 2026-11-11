@@ -63,6 +63,8 @@ pub const MAX_NEGATIVE: usize = 20_000;
 pub struct UserDict {
     positive: HashMap<(Language, String), u32>,
     negative: HashMap<(Language, String), Strength>,
+    /// Whether it has positive words of each language (Korean, English, Japanese).
+    has_positive: [bool; 3],
 }
 
 /// What `parse` found, for the shell to report.
@@ -102,6 +104,7 @@ impl UserDict {
             }
             let word = if p.language == Language::English { word.to_lowercase() } else { word };
             let count = count_of(p.count, p.confidence.as_deref());
+            d.has_positive[p.language as usize] = true;
             *d.positive.entry((p.language, word)).or_insert(0) += count;
         }
         for n in file.negative.into_iter().take(MAX_NEGATIVE) {
@@ -124,6 +127,11 @@ impl UserDict {
     pub fn count(&self, language: Language, word: &str) -> u32 {
         let key = if language == Language::English { word.to_lowercase() } else { word.to_string() };
         self.positive.get(&(language, key)).copied().unwrap_or(0)
+    }
+
+    /// Whether the dictionary has any positive word of `language` (none: nothing to look up).
+    pub fn has_positive(&self, language: Language) -> bool {
+        self.has_positive[language as usize]
     }
 
     pub fn negative(&self, language: Language, word: &str) -> Option<Strength> {
@@ -169,6 +177,8 @@ mod tests {
         assert_eq!(d.count(Language::Korean, "데이터센터"), 30);
         assert_eq!(d.count(Language::English, "kubernetes"), 50);
         assert_eq!(d.count(Language::Japanese, "サーバー"), 200);
+        assert!(d.has_positive(Language::Japanese) && d.has_positive(Language::English));
+        assert!(!UserDict::parse(r#"{"format": "bada-dictionary", "version": 1, "positive": [{"word": "가"}]}"#).0.has_positive(Language::Japanese));
         assert_eq!(d.negative(Language::Korean, "감소합니다"), Some(Strength::Strong));
         assert_eq!(d.negative(Language::English, "God"), Some(Strength::Soft));
         let (_, bad) = UserDict::parse(r#"{"format": "other", "version": 1}"#);
