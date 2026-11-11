@@ -1,0 +1,31 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    },
+    {
+      "name": "x64",
+      "inherits": "base",
+      "displayName": "x64 (from an x64 VS dev shell: tools/dev.ps1 -Arch x64)",
+      "architecture": { "value": "x64", "strategy": "external" },
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
+    },
+    {
+      "name": "x86",
+      "inherits": "base",
+      "displayName": "x86, for 32-bit apps (from an x86 VS dev shell: tools/dev.ps1 -Arch x86)",
+      "architecture": { "value": "x86", "strategy": "external" },
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
+    },
+    {
+      "name": "host",
+      "inherits": "base",
+      "displayName": "The core and its tests on macOS / Linux"
+    }
+  ]
+}

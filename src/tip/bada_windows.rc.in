@@ -1,0 +1,30 @@
+// bada_windows.dll resources (UTF-8). CMake fills in the paths and the version.
+#pragma code_page(65001)
+#include <winres.h>
+
+#include "resource.h"
+
+IDI_LOGO ICON "@BW_ICON@"
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION @BW_VERSION_NUMBERS@
+PRODUCTVERSION @BW_VERSION_NUMBERS@
+FILEOS VOS_NT_WINDOWS32
+FILETYPE VFT_DLL
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904B0"
+        BEGIN
+            VALUE "FileDescription", "bada-windows text input processor"
+            VALUE "FileVersion", "@BW_VERSION@"
+            VALUE "ProductName", "bada-windows"
+            VALUE "ProductVersion", "@BW_VERSION@"
+            VALUE "LegalCopyright", "CC0 1.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END

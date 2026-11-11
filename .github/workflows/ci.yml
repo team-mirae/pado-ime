@@ -1,0 +1,39 @@
+# The core tests on Linux and macOS against shout (team-mirae/bada-compatible), and the full Windows
+# build (engine, DLL, tests) for x64 and x86. Typing through the TIP needs a desktop: not here.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  core:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: team-mirae/bada-compatible
+          path: bada-compatible
+      - uses: dtolnay/rust-toolchain@stable
+      - run: BADA_COMPATIBLE=$PWD/bada-compatible tools/test-core.sh
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc, i686-pc-windows-msvc
+      - name: build and test (x64, x86)
+        shell: pwsh
+        run: tools/build.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shout-bada-windows
+          path: build/ime/shout
