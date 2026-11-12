@@ -3,14 +3,15 @@
 # Build first (windows/build.ps1). The Sandbox window shows the test typing; it closes by itself.
 #   windows/sandbox.ps1             install + type tests, results in windows\host\build\sandbox\
 #   windows/sandbox.ps1 -Keep       leave the Sandbox open afterwards, to try pado by hand
-param([switch] $Keep)
+#   windows/sandbox.ps1 -Setup      install with the installer (windows/installer.ps1 first) instead
+param([switch] $Keep, [switch] $Setup)
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path "$PSScriptRoot\..").Path
 $results = "$root\windows\host\build\sandbox"
 New-Item $results -ItemType Directory -Force | Out-Null
 Remove-Item "$results\*" -Force -ErrorAction SilentlyContinue
 $wsb = Join-Path $env:TEMP 'pado-ime.wsb'
-$keepArg = if ($Keep) { '-Keep' } else { '' }
+$keepArg = (@(if ($Keep) { '-Keep' }) + @(if ($Setup) { '-Setup' })) -join ' '
 # vGPU off: with it on the Sandbox stayed black on the owner's PC (bada-windows' tools/sandbox).
 @"
 <Configuration>

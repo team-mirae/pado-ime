@@ -1,17 +1,21 @@
 # pado on Windows: bada's engine as pado_engine.dll, bada-windows' TIP (x64 and x86) with its core
-# tests, the settings window, then pado's tests (docs/windows.md, "Testing"). Typing through the
-# installed TIP needs a desktop: not here.
+# tests, the settings window, then pado's tests (docs/windows.md, "Testing"), and the installer
+# (windows/installer.ps1). Typing through the installed TIP needs a desktop: not here.
+# A tag v<version> (the engine's, engine/Cargo.toml) publishes a GitHub release with the installer.
 name: windows
 
 on:
   push:
     branches: [main]
+    tags: ["v*"]
   pull_request:
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: windows-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
@@ -28,7 +32,31 @@ jobs:
       - name: Test
         shell: powershell
         run: windows/test.ps1
+      - name: Installer
+        shell: powershell
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) { choco install innosetup -y --no-progress }
+          $version = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME.TrimStart('v') } else { '' }
+          windows/installer.ps1 -Version $version
       - uses: actions/upload-artifact@v7
         with:
           name: pado-ime
           path: windows/host/build/ime/pado
+      - uses: actions/upload-artifact@v7
+        with:
+          name: pado-ime-setup
+          path: windows/host/build/installer/*.exe
+      - name: Release
+        if: github.ref_type == 'tag'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          engine=$(sed -n 's/^version *= *"\(.*\)"/\1/p' engine/Cargo.toml | head -1)
+          [ "${GITHUB_REF_NAME#v}" = "$engine" ] || { echo "Tag $GITHUB_REF_NAME isn't the engine's version $engine"; exit 1; }
+          notes="windows/installer/notes/$GITHUB_REF_NAME.md"
+          if ! gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            if [ -f "$notes" ]; then set -- --notes-file "$notes"; else set -- --generate-notes; fi
+            gh release create "$GITHUB_REF_NAME" --title "pado ime ${GITHUB_REF_NAME#v}" "$@"
+          fi
+          gh release upload "$GITHUB_REF_NAME" windows/host/build/installer/*.exe --clobber

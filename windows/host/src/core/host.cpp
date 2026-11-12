@@ -140,6 +140,11 @@ void Host::ProfileKey(const std::string& profile, const KeyDown& key, Field& fie
         SwitchMode(Other(mode_), field);
         return;
     }
+    // ⌃ + a profile key in henkan: ⌃Lang1, bada's ⌃かな (bada spec §6.3: fixes what shows).
+    if (m.ctrl && !m.alt && !m.shift && !m.meta) {
+        if (mode_ == Mode::kHenkan) Apply(engine_.Key("Lang1", Mods{false, true, false, false}), field);
+        return;
+    }
     if (m.ctrl || m.alt || m.meta) return;
     if (mode_ == Mode::kMuhenkan) {
         if (engine_.HasProfiles()) profile_ = profile;
