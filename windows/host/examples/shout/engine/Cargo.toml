@@ -14,7 +14,7 @@ crate-type = ["cdylib"]
 path = "src/lib.rs"
 
 [dependencies]
-shout-ime = { git = "https://github.com/team-mirae/bada-compatible", rev = "f00ca67" }
+shout-ime = { git = "https://github.com/team-mirae/bada-compatible", rev = "ab11c05" }
 
 [profile.release]
 opt-level = "s"

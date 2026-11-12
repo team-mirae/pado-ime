@@ -2,7 +2,7 @@
 
 - The Windows (TSF) host for bada-compatible engines. Source of truth: `docs/spec.md` (behaviour),
   `docs/api.md` (the state for other programs). If code and docs disagree, fix one in the same change.
-  The engine contract is team-mirae/bada-compatible's `docs/bada-compatible-v1.md` (v1.1); keep up
+  The engine contract is team-mirae/bada-compatible's `docs/bada-compatible-v1.md` (v1.3); keep up
   with it, don't fork it.
 - `src/core/` stays free of Windows headers (only `engine.cpp`'s loader has an `#ifdef`): its tests
   run on macOS. Put key policy there (`host.*`), not in the text service.

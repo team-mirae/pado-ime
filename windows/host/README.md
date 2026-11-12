@@ -1,8 +1,8 @@
 # bada-windows
 
 A Windows input method for **any bada-compatible engine**: one TSF text input processor that loads an
-IME engine speaking [bada-compatible](https://github.com/team-mirae/bada-compatible)'s C ABI (v1.1,
-bada ime 0.2.0's plus `P_state`) and hosts it the way [bada ime](https://github.com/team-mirae/bada-ime)'s
+IME engine speaking [bada-compatible](https://github.com/team-mirae/bada-compatible)'s C ABI (v1.3,
+bada ime 0.2.0's plus `P_state` and ⌃ `Lang1`) and hosts it the way [bada ime](https://github.com/team-mirae/bada-ime)'s
 macOS shell hosts bada: JIS language keys, muhenkan and henkan modes, henkan profiles, optional Caps
 Lock handling, the candidate menu, and the text in every app. The engine is a DLL named in a small
 manifest; nothing is linked, so one build hosts any engine.
