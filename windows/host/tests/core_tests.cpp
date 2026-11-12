@@ -538,11 +538,16 @@ void TestShout(const Module& module) {
         CHECK_EQ(field.preedit(), std::string("hi"));
         t.Type("S-henkan");
         CHECK_EQ(field.preedit(), std::string("HI"));
+        t.Type("C-henkan C-katakana");  // ⌃ Lang1 (v1.3, "fix what shows"): shout keeps what shows
+        CHECK_EQ(field.preedit(), std::string("HI"));
+        CHECK(host.mode() == Mode::kHenkan);
         t.Type("katakana");  // no profiles in shout: next entry too
         CHECK_EQ(field.preedit(), std::string("hi"));
         t.Type("eisu");  // 英数 commits, then muhenkan
         CHECK(host.mode() == Mode::kMuhenkan);
         CHECK_EQ(field.text(), std::string("hi"));
+        t.Type("C-henkan");  // ⌃ + a profile key in muhenkan: nothing
+        CHECK(host.mode() == Mode::kMuhenkan);
         t.Type("kana KeyX Period");  // かな: henkan (mac-kana); Period commits, then types
         CHECK_EQ(field.text(), std::string("hiX."));
         t.Type("C-muhenkan C-A-S-henkan");  // MEH + 変換: the other mode
