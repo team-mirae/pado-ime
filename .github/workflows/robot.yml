@@ -28,9 +28,16 @@ jobs:
           if [ -f target/robot-report.md ]; then
             cat target/robot-report.md >> "$GITHUB_STEP_SUMMARY"
           fi
+          # Layout sets: the table of sets. The corpora and the examples are in the artifact.
+          if [ -f target/robot-sets-report.md ]; then
+            sed -n '/^## By corpus/q;p' target/robot-sets-report.md >> "$GITHUB_STEP_SUMMARY"
+          fi
       - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: robot-report
-          path: engine/target/robot-report.md
+          path: |
+            engine/target/robot-report.md
+            engine/target/robot-sets-report.md
+            engine/target/robot-sets.tsv
           if-no-files-found: ignore

@@ -49,3 +49,11 @@ common Japanese words not written in kana; built into the engine): words and rea
 
 en-words.txt's `#! rare` section is Webster's Second New International Dictionary (1934), in the
 public domain, as macOS ships it in /usr/share/dict/words (engine/tools/build_en_rare.py).
+
+key-models.bin (the key models of the layout-set ranker; built into the engine) holds key n-gram
+statistics only, no text, built by tools/build_keymodel.py and examples/keymodel.rs from: ko-words.tsv
+(the sources above); Tatoeba (https://tatoeba.org, CC BY 2.0 FR) English and Japanese sentences, the
+Japanese read with SudachiPy and SudachiDict core (Apache-2.0); the Leipzig Corpora Collection's
+English sentences (CC BY; Goldhahn, Eckart and Quasthoff, LREC 2012); and statutes: 17 U.S.C.
+(govinfo.gov, public domain), 日本国憲法 and 民法 (e-Gov 法令API; 著作権法第13条), 대한민국헌법 and 민법
+(ko.wikisource.org; 저작권법 제7조).

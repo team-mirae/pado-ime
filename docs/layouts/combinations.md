@@ -5,6 +5,12 @@ readings are ranked as you type and the top one shows ([spec §4.3](../spec.md))
 enabled is a setting (Henkan candidates). So a combination isn't a new layout: it's an enabled set,
 and the keyboard means all of its layouts at the same time.
 
+Between the layouts of a set, **key models** decide: each layout has a model of what its language
+looks like typed on it, and the layout the keys look like shows ([spec §7.0](../spec.md)). The
+typing robot measures every set of two or three production layouts of different languages
+([robot.md](../robot.md#layout-sets)): the first row is right 93.9% of the time, against 94.3% for
+the layouts by themselves.
+
 These images put every enabled layout on one keycap, as a printed multi-script keycap would:
 
 - **Top left: Latin** (QWERTY 0, Korean Roman 18, Romaji 21). Letters as capitals; on number and
@@ -20,6 +26,18 @@ These images put every enabled layout on one keycap, as a printed multi-script k
 
 Render any enabled set with `tools/render/index.html` (Layout → Combinations) or
 `tools/render/export_png.py`.
+
+## QWERTY + bada plain + kana
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../images/layouts/qwerty-bada-plain-kana-dark.png">
+  <img src="../images/layouts/qwerty-bada-plain-kana-light.png" alt="QWERTY, bada plain and kana legends on one HHKB JIS keyboard">
+</picture>
+
+Henkan candidates **0, 16, 20**. English, Korean on bada plain ([16](16-bada-plain.md)) and Japanese
+kana from one mode. These keycaps print less than the keys type: the number row has the kana and the
+digit ⇧ types (bada plain's; its punctuation and QWERTY's symbols are left off), `-` `^` `¥` the kana
+alone, and the letter rows the Latin letter, bada plain's unshifted jamo and the kana.
 
 ## QWERTY + bada + kana
 
@@ -42,10 +60,10 @@ switching: the ranker decides whether `DH` was `dh`, 가 or しく. Bada's commo
 
 Henkan candidates **0, 15, 20**. English, Korean typed as it's romanized, and Japanese kana from one
 mode. QWERTY and bada roman share the letters, so the keycaps show only where bada roman differs:
-`q` is `ch`, `x` an initial ㅇ, `;` a syllable break (the dotted square), `¥` is ₩. The ranker
-decides between the English word and the Korean reading of the same letters: a known Korean word
-first, then a common English word, then a rare English word over a reading that's no Korean word
-(`interpolate`, not 인텔포라테; [spec §6.4](../spec.md)). Kana keeps its own corner.
+`q` is `ch`, `x` an initial ㅇ, `;` a syllable break (the dotted square), `¥` is ₩. The key models
+decide between the English word and the Korean reading of the same letters: `time` is English,
+`hanguk` 한국, and a rare English word stays English (`interpolate`, not 인텔포라테;
+[spec §6.4](../spec.md)). Kana keeps its own corner.
 
 ## bada + romaji
 
@@ -55,8 +73,8 @@ first, then a common English word, then a rare English word over a reading that'
 </picture>
 
 Henkan candidates **13, 21**. Korean on Bada and Japanese in romaji, for a typist who doesn't type
-kana. A romaji word that is a known Japanese word ranks first (`konnichiha` → こんにちは), and
-Korean still comes out of the same keys (D H G R H V H B E M A H → 감사합니다) ([spec §11.1](../spec.md#111-ranking)).
+kana. Romaji shows as Japanese (`konnichiha` → こんにちは), and Korean still comes out of the same
+keys (D H G R H V H B E M A H → 감사합니다) ([spec §11.1](../spec.md#111-ranking)).
 
 ## QWERTY + romaji
 

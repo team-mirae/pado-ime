@@ -4,6 +4,7 @@
 //! - 10 JIS KTS (henkan): standard 2-set on the letter keys, JIS symbols elsewhere.
 //! - 13 JIS Bada (henkan): `docs/layouts/13-bada.json`, deterministic (docs/layouts/13-bada.md).
 //! - 14 JIS 3-set (henkan): `docs/layouts/14-3set-jis.json`, read as it is (docs/layouts/14-3set-jis.md).
+//! - 16 bada plain (henkan): vowels left, consonants right, deterministic (docs/layouts/16-bada-plain.md).
 //! - 150 Symbols and 151 Unicode (henkan): searches (`search.rs`).
 //! - 15 bada roman (henkan): `bada_roman.rs`.
 //! - 18 JIS Korean Roman (henkan): `korean_roman.rs`.
@@ -20,6 +21,7 @@ pub const LEGACY_MOONSHOT: u32 = 12;
 pub const BADA: u32 = 13;
 pub const K3S_JIS: u32 = 14;
 pub const BADA_ROMAN: u32 = 15;
+pub const BADA_PLAIN: u32 = 16;
 pub const SYMBOLS: u32 = 150;
 pub const UNICODE: u32 = 151;
 pub const KOREAN_ROMAN: u32 = 18;
@@ -36,6 +38,7 @@ pub const CATALOG: &[(u32, &str, bool)] = &[
     (BADA, "Korean (bada)", true),
     (K3S_JIS, "Korean (3-set JIS)", true),
     (BADA_ROMAN, "Korean (bada roman)", true),
+    (BADA_PLAIN, "Korean (bada plain)", true),
     (KOREAN_ROMAN, "Korean (Roman)", true),
     (KANA_KOREAN, "Korean (Kana)", true),
     (KANA, "Japanese (Kana)", true),
@@ -337,6 +340,83 @@ fn bada(key: Key, shift: bool) -> Option<Role> {
     }
 }
 
+/// Layout 16, unshifted (docs/layouts/16-bada-plain.md): the vowels under the left hand, the
+/// consonants under the right, punctuation on the number row. ㄸ ㅉ ㅃ are never finals.
+fn bada_plain_base(key: Key) -> Option<Role> {
+    use Key::*;
+    let ini = |j| Role::Cons { ini: Some(j), fin: None };
+    Some(match key {
+        Digit1 => Role::Lit('!'),
+        Digit2 => Role::Lit('"'),
+        Digit3 => Role::Lit('｢'),
+        Digit4 => Role::Lit('｣'),
+        Digit5 => Role::Lit('%'),
+        Digit6 => Role::Lit('&'),
+        Digit7 => Role::Lit('\''),
+        Digit8 => Role::Lit(','),
+        Digit9 => Role::Lit('.'),
+        Digit0 => Role::Lit('?'),
+        Minus => Role::Lit('-'),
+        Equal => Role::Lit('#'),
+        IntlYen => Role::Lit('₩'),
+        KeyQ => v('ㅖ'),
+        KeyW => v('ㅗ'),
+        KeyE => v('ㅜ'),
+        KeyR => v('ㅕ'),
+        KeyT => v('ㅐ'),
+        KeyY => v('ㅢ'),
+        KeyU => c('ㅈ'),
+        KeyI => c('ㄹ'),
+        KeyO => c('ㅅ'),
+        KeyP => c('ㅁ'),
+        BracketLeft => c('ㅌ'),
+        BracketRight => c('ㅋ'),
+        KeyA => v('ㅓ'),
+        KeyS => v('ㅡ'),
+        KeyD => v('ㅣ'),
+        KeyF => v('ㅏ'),
+        KeyG => v('ㅑ'),
+        KeyH => c('ㅎ'),
+        KeyJ => c('ㅇ'),
+        KeyK => c('ㄱ'),
+        KeyL => c('ㄴ'),
+        Semicolon => c('ㄷ'),
+        Quote => c('ㅊ'),
+        Backslash => c('ㅍ'),
+        KeyZ => v('ㅒ'),
+        KeyX => v('ㅛ'),
+        KeyC => v('ㅠ'),
+        KeyV => v('ㅘ'),
+        KeyB => v('ㅔ'),
+        KeyN => c('ㅂ'),
+        KeyM => c('ㅆ'),
+        Comma => c('ㄲ'),
+        Period => ini('ㄸ'),
+        Slash => ini('ㅉ'),
+        IntlRo => ini('ㅃ'),
+        _ => return None,
+    })
+}
+
+/// Layout 16 with Shift, as JIS Moonshot's (12): ⇧ + a consonant is it and ㅏ (가), ⇧ + a vowel a
+/// syllable on ㅇ (아). On the number row ⇧ types the digit; ⇧- is ·, ⇧^ ~ and ⇧¥ |.
+fn bada_plain(key: Key, shift: bool) -> Option<Role> {
+    let base = bada_plain_base(key)?;
+    if !shift {
+        return Some(base);
+    }
+    Some(match base {
+        Role::Cons { ini: Some(j), .. } => Role::ConsA(j),
+        Role::Vowel(x) => Role::VowelNew(x),
+        _ => Role::Lit(match key {
+            Key::Minus => '·',
+            Key::Equal => '~',
+            Key::IntlYen => '|',
+            _ => key.code().chars().last()?,
+        }),
+    })
+}
+
 /// Layout 14, from its editor JSON (`docs/layouts/14-3set-jis.json`): 초성 / 중성 / 종성 keys
 /// unshifted; ⇧ types what the file says (the key's JIS character).
 fn k3s(key: Key, shift: bool) -> Option<Role> {
@@ -432,6 +512,13 @@ pub fn rules(id: u32) -> Option<Rules> {
             held_shift: false,
             double_tense: true,
         }),
+        BADA_PLAIN => Some(Rules {
+            join_vowels: true,
+            implied_ieung: true,
+            double_toggle: true,
+            held_shift: false,
+            double_tense: false,
+        }),
         _ => None,
     }
 }
@@ -444,6 +531,7 @@ pub fn role(id: u32, key: Key, shift: bool) -> Option<Role> {
         LEGACY_MOONSHOT => legacy_moonshot(key, shift),
         BADA => bada(key, shift),
         K3S_JIS => k3s(key, shift),
+        BADA_PLAIN => bada_plain(key, shift),
         _ => None,
     }
 }
@@ -852,6 +940,57 @@ mod tests {
         assert_eq!(plain(KTS, &[KeyR, KeyK, KeyQ, KeyT]), "값");
         assert_eq!(plain(KTS, &[KeyR, KeyK, KeyQ, KeyT, KeyK]), "갑사");
         assert_eq!(keys(KTS, &[(KeyR, true), (KeyK, false)]), "까");
+    }
+
+    #[test]
+    fn bada_plain_composes() {
+        let p = |ks: &[Key]| plain(BADA_PLAIN, ks);
+        let k = |spec: &[(Key, bool)]| keys(BADA_PLAIN, spec);
+        // vowels on the left, consonants on the right; a vowel alone starts on ㅇ
+        assert_eq!(p(&[KeyK, KeyF]), "가");
+        assert_eq!(p(&[KeyF, KeyD]), "아이");
+        assert_eq!(p(&[KeyH, KeyF, KeyL]), "한");
+        // a vowel takes the final before it, as 2-set does: an ㅇ of its own is typed, or ⇧ + the vowel
+        assert_eq!(p(&[KeyH, KeyF, KeyL, KeyK, KeyE, KeyK, KeyA]), "한구거");
+        assert_eq!(p(&[KeyH, KeyF, KeyL, KeyK, KeyE, KeyK, KeyJ, KeyA]), "한국어");
+        assert_eq!(k(&[(KeyH, false), (KeyF, false), (KeyL, false), (KeyK, false), (KeyE, false), (KeyK, false), (KeyA, true)]), "한국어");
+        assert_eq!(p(&[KeyK, KeyE, KeyA]), "궈");
+        assert_eq!(k(&[(KeyK, false), (KeyE, false), (KeyA, true)]), "구어");
+        assert_eq!(p(&[KeyK, KeyF, KeyD]), "가이");
+        // an initial waiting for its vowel: ⇧ changes nothing
+        assert_eq!(k(&[(KeyK, false), (KeyF, true)]), "가");
+        // the same vowel key again right after it took a final puts the final back, once
+        assert_eq!(p(&[KeyP, KeyF, KeyI, KeyD]), "마리");
+        assert_eq!(p(&[KeyP, KeyF, KeyI, KeyD, KeyD]), "말이");
+        assert_eq!(p(&[KeyP, KeyF, KeyI, KeyD, KeyD, KeyD]), "말이이");
+        // ⇧ + a consonant: it and ㅏ, a syllable still open: finals go on it, a vowel takes one back
+        assert_eq!(k(&[(KeyK, true)]), "가");
+        assert_eq!(k(&[(KeyK, true), (KeyL, false)]), "간");
+        assert_eq!(k(&[(Semicolon, true), (KeyI, false), (KeyK, false)]), "닭");
+        assert_eq!(k(&[(KeyK, true), (KeyL, false), (KeyF, false)]), "가나");
+        assert_eq!(k(&[(KeyJ, true), (KeyL, true)]), "아나");
+        // ⇧ + a vowel: the same, on ㅇ: vowels join it and finals go on it
+        assert_eq!(k(&[(KeyF, true), (KeyL, false)]), "안");
+        assert_eq!(k(&[(KeyW, true), (KeyF, false)]), "와");
+        assert_eq!(k(&[(KeyE, true), (KeyA, false), (KeyL, false)]), "원");
+        assert_eq!(k(&[(KeyK, false), (KeyE, false), (KeyK, false), (KeyA, true), (KeyL, false)]), "국언");
+        // compound vowels join; ㅘ and ㅢ have keys too
+        assert_eq!(p(&[KeyK, KeyW, KeyF]), "과");
+        assert_eq!(p(&[KeyK, KeyV]), "과");
+        assert_eq!(p(&[KeyK, KeyW, KeyT]), "괘");
+        assert_eq!(p(&[KeyE, KeyD]), "위");
+        assert_eq!(p(&[KeyY]), "의");
+        // double finals cluster; ㄲ ㅆ are finals, ㄸ ㅉ ㅃ never
+        assert_eq!(p(&[Semicolon, KeyF, KeyI, KeyK]), "닭");
+        assert_eq!(p(&[KeyK, KeyF, KeyM]), "갔");
+        assert_eq!(p(&[KeyK, KeyF, Period]), "가ㄸ");
+        assert_eq!(p(&[KeyK, KeyF, Period, KeyF]), "가따");
+        // the number row: punctuation, digits on ⇧
+        assert_eq!(k(&[(Digit1, false), (Digit2, false), (Digit7, false)]), "!\"'");
+        assert_eq!(k(&[(Digit3, false), (Digit4, false), (Digit8, false), (Digit9, false), (Digit0, false), (IntlYen, false)]), "｢｣,.?₩");
+        assert_eq!(k(&[(Digit1, true), (Digit0, true), (Minus, true), (Equal, true), (IntlYen, true)]), "10·~|");
+        // ⇧⌥: the key's shifted JIS character, as in every Korean layout
+        assert_eq!(compose_presses(BADA_PLAIN, &[Press { key: Digit8, shift: true, alt: true }]), "(");
     }
 
     #[test]

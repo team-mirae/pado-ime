@@ -124,6 +124,24 @@ def k3s14():
                      "No jamo on ⇧: ⇧ types the key's JIS character. The same initial twice is its tense form (ㄱ ㄱ → ㄲ), so is ㄱ or ㅅ twice as a final; "
                      "vowels join (ㅗ ㅏ → ㅘ), finals cluster (ㄹ ㄱ → ㄺ).", keys=keys)
 
+def plain16():
+    """Layout 16 as the engine types it (engine/src/layout.rs, docs/layouts/16-bada-plain.json): ⇧ + a
+    consonant is it and ㅏ, ⇧ + a vowel a syllable on ㅇ; the cells show the syllable."""
+    d = json.load(open(os.path.join(DOCS, "16-bada-plain.json")))
+    keys = {}
+    for code in list(JIS) + ["Key"+c for c in LETTERS]:
+        v = d["keys"].get(code, {"base": [], "shift": []})
+        shift = cell_of(v["shift"])
+        tok = v["shift"][0] if v["shift"] else None
+        if tok and tok["r"] in ("a", "n"):
+            shift = {"t": syl(tok["t"], "ㅏ") if tok["r"] == "a" else syl("ㅇ", tok["t"]), "c": "y"}
+        keys[code] = {"base": cell_of(v["base"]), "shift": shift}
+    return dict(id=16, name="bada plain", display="Korean (bada plain)", kind="henkan",
+                no_jis=True,                               # no JIS keycap legends: no key types its JIS character
+                note="Deterministic. Vowels under the left hand, consonants under the right; a consonant is an initial or a final, as in 2-set, "
+                     "and a vowel alone starts on ㅇ. ⇧ + a consonant is it and ㅏ (⇧ㄱ 가); ⇧ + a vowel starts a syllable on ㅇ (⇧ㅓ 어). "
+                     "Vowels join (ㅗ ㅏ → ㅘ), finals cluster (ㄹ ㄱ → ㄺ). The number row is punctuation, its digits on ⇧; ⇧⌥: the key's shifted JIS character.", keys=keys)
+
 def search(id_, name, note):
     """Layouts 150 and 151: the keys spell a search."""
     out = lay(id_, "JIS " + name, name, "henkan", qwerty(), note=note)
@@ -214,6 +232,7 @@ if __name__ == "__main__":
         bada13(),
         k3s14(),
         roman15(),
+        plain16(),
         roman18(),
         kana19(),
         None,

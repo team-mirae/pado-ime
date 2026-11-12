@@ -14,8 +14,8 @@ CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 # name → layout ids (one id: a layout on its own; several: enabled together in henkan mode)
 IMAGES = {
     "00-qwerty": [0], "10-kts": [10], "11-korean-legacy": [11], "12-moonshot": [12], "13-bada": [13], "14-3set-jis": [14],
-    "15-bada-roman": [15], "18-korean-roman": [18], "19-kana-korean": [19], "20-kana": [20], "21-romaji": [21],
-    "qwerty-bada-kana": [0, 13, 20], "qwerty-bada-roman-kana": [0, 15, 20], "bada-romaji": [13, 21], "qwerty-romaji": [0, 21], "qwerty-kts": [0, 10],
+    "15-bada-roman": [15], "16-bada-plain": [16], "18-korean-roman": [18], "19-kana-korean": [19], "20-kana": [20], "21-romaji": [21],
+    "qwerty-bada-plain-kana": [0, 16, 20], "qwerty-bada-kana": [0, 13, 20], "qwerty-bada-roman-kana": [0, 15, 20], "bada-romaji": [13, 21], "qwerty-romaji": [0, 21], "qwerty-kts": [0, 10],
 }
 SIZE = {"hhkb": 15, "apple": 14.5}   # board width in key units (keyboards.js)
 

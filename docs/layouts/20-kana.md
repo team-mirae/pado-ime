@@ -39,29 +39,41 @@ Every key types its JIS kana legend, with Shift for small kana and punctuation: 
 ⇧0 を, ⇧E ぃ, ⇧Z っ, ⇧, 、, ⇧. 。, ⇧/ ・, ⇧[ 「, ⇧] 」. ゛ (@) and ゜ ([) attach to the kana before
 them (か゛ → が, は゜ → ぱ, う゛ → ゔ) and stay as they are where they can't.
 
-Unshifted on the first line of each row, ⇧ on the second (empty: as unshifted):
+**⇧⌥ + a number or symbol key** types its shifted JIS character, full-width (⇧⌥/ ？, ⇧⌥1 ！): ⇧ on
+those keys is kana, so these characters have no other key. They are staged with the kana
+(こんにちは ⇧⌥/ → こんにちは？) and typing goes on after them. ⌥ without ⇧, and ⌥ on a letter key,
+aren't the layout's: what's staged is committed and the key goes to the app
+([spec §6.3](../spec.md#63-in-henkan-mode)).
+
+Unshifted on the first line of each row, ⇧ on the second (empty: as unshifted), ⇧⌥ on the third
+(empty: not the layout's):
 
 | | `1` | `2` | `3` | `4` | `5` | `6` | `7` | `8` | `9` | `0` | `-` | `^` | `¥` |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | key | ぬ | ふ | あ | う | え | お | や | ゆ | よ | わ | ほ | へ | ー |
 | ⇧ |  |  | ぁ | ぅ | ぇ | ぉ | ゃ | ゅ | ょ | を |  |  |  |
+| ⇧⌥ | ！ | ＂ | ＃ | ＄ | ％ | ＆ | ＇ | （ | ） | ０ | ＝ | ～ | ｜ |
 
 | | `Q` | `W` | `E` | `R` | `T` | `Y` | `U` | `I` | `O` | `P` | `@` | `[` |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | key | た | て | い | す | か | ん | な | に | ら | せ | ゛ | ゜ |
 | ⇧ |  |  | ぃ |  |  |  |  |  |  |  |  | 「 |
+| ⇧⌥ |  |  |  |  |  |  |  |  |  |  | ｀ | ｛ |
 
 | | `A` | `S` | `D` | `F` | `G` | `H` | `J` | `K` | `L` | `;` | `:` | `]` |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | key | ち | と | し | は | き | く | ま | の | り | れ | け | む |
 | ⇧ |  |  |  |  |  |  |  |  |  |  |  | 」 |
+| ⇧⌥ |  |  |  |  |  |  |  |  |  | ＋ | ＊ | ｝ |
 
 | | `Z` | `X` | `C` | `V` | `B` | `N` | `M` | `,` | `.` | `/` | `\` |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | key | つ | さ | そ | ひ | こ | み | も | ね | る | め | ろ |
 | ⇧ | っ |  |  |  |  |  |  | 、 | 。 | ・ |  |
+| ⇧⌥ |  |  |  |  |  |  |  | ＜ | ＞ | ？ | ＿ |
 
-The table is JIS Moonshot's (`docs/moonshot.md` §3 there), as is the ゛ ゜ automaton.
+The kana are JIS Moonshot's table (`docs/moonshot.md` §3 there), as is the ゛ ゜ automaton; the ⇧⌥
+row is bada ime's.
 
 Shared with Romaji ([21](21-romaji.md)), and described in the spec ([§11](../spec.md#11-japanese-layouts-20-and-21):
 ranking, kanji conversion, menu notes):

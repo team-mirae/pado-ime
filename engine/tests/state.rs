@@ -125,7 +125,8 @@ fn bada_state_over_the_abi() {
         let e = CString::new(format!(r#"{{"key":"{k}"}}"#)).unwrap();
         ffi::bada_key(h, e.as_ptr());
     };
-    for k in ["KeyV", "KeyH", "KeyD", "KeyD", "Digit9"] {
+    // 학교 on the default layout, bada plain (16): ㅎ ㅏ ㄱ ㄱ ㅛ
+    for k in ["KeyH", "KeyF", "KeyK", "KeyK", "KeyX"] {
         key(k);
     }
     let s = state(h);

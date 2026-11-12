@@ -52,6 +52,10 @@ What a positive word does, as built:
   used first. The file has no readings, so a kanji word that conversion never makes of what you
   typed can't be offered.
 
+Beside other layouts, the layout that reads one of your words gets 40 points more than for a known
+word ([spec §7.0](spec.md)): your word shows unless the keys look far more like another layout's
+language.
+
 A word listed twice adds its counts.
 
 ### `negative`: words you never mean

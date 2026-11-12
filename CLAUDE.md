@@ -28,7 +28,10 @@
 - Windows: `windows/build.ps1` (engine as `pado_engine.dll` + bada-windows' TIP, x64 and x86, its core
   tests, `pado-settings.exe`, data), `windows/test.ps1` (pado's tests), `windows/install.ps1`
   (`-Update`, `-Uninstall`, `-Log`), `windows/sandbox.ps1` (install + `windows/type-test.ps1` in
-  Windows Sandbox). PowerShell scripts are UTF-8 **with BOM**.
+  Windows Sandbox; `-Setup` with the installer), `windows/installer.ps1` (Inno Setup 6:
+  `windows/installer/pado.iss` → `pado-ime-<version>-setup.exe`). PowerShell scripts are UTF-8 **with BOM**.
+- Releases: push a tag `v<engine version>`; `.github/workflows/windows.yml` publishes the installer, with
+  `windows/installer/notes/v<version>.md` as the notes.
 - `windows/tools/make-icon.py`: `docs/images/icon/pado-icon.svg` → PNGs and `windows/pado/pado.ico`.
 - Engine: `cargo test` in `engine/` (bada's tests). The typing robot: `cargo test --release --test robot`
   (docs/robot.md; CI: `.github/workflows/robot.yml`).

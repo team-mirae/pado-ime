@@ -86,7 +86,13 @@ html.capture,.capture body{background:transparent}
 let U = 60;
 const PAD = 14, G = 3, R = 7;
 // Layouts enabled together in henkan mode (spec §4.3). Legends of every layout share the keycap.
+// `caps(code, layout id)` says what of a layout a keycap prints: "all" (the default), "base" (its
+// unshifted legend only), "digit" (its ⇧ legend, printed where a letter's capital goes) or "none".
 const BADA_COMBOS = [
+  // The number row prints the kana and the digit ⇧ types (bada plain's); - ^ ¥ print the kana alone.
+  { name: "QWERTY + bada plain + kana", ids: [0, 16, 20],
+    caps: (code, id) => code.startsWith("Digit") ? ({ 20: "base", 16: "digit" })[id] || "none"
+      : ["Minus", "Equal", "IntlYen"].includes(code) ? (id === 20 ? "base" : "none") : "all" },
   { name: "QWERTY + bada + kana", ids: [0, 13, 20] },
   { name: "QWERTY + bada roman + kana", ids: [0, 15, 20] },
   { name: "bada + romaji", ids: [13, 21] },
@@ -124,7 +130,7 @@ function selected() {
     const ids = v.slice(1).split(",").map(Number);
     const layers = ids.map(id => BADA_LAYOUTS.find(l => l.id === id)).filter(Boolean);
     const combo = BADA_COMBOS.find(c => c.ids.join(",") === ids.join(","));
-    if (layers.length) return { layers, name: combo ? combo.name : layers.map(l => l.display).join(" + "), id: ids.join(" · ") };
+    if (layers.length) return { layers, name: combo ? combo.name : layers.map(l => l.display).join(" + "), id: ids.join(" · "), caps: combo && combo.caps };
   }
   const lay = BADA_LAYOUTS[+v.slice(1)] || BADA_LAYOUTS[0];
   return { layers: [lay], name: lay.name, id: lay.id };
@@ -137,7 +143,7 @@ function assignSlots(layers) {
   const used = new Set();
   return layers.map(l => { const s = SLOT_PREF(l.id).find(x => !used.has(x)); used.add(s); return s; });
 }
-function comboKey(g, x, y, w, h, code, layers, slots) {
+function comboKey(g, x, y, w, h, code, layers, slots, caps) {
   const shown = new Set();
   const text = (t, lx, ly, size, cls, anchor = "start") => {
     const e = el("text", { x: lx, y: ly, "font-size": size, "text-anchor": anchor, class: `lg c-${cls}` + (cls === "f" ? " under" : "") }, t);
@@ -150,6 +156,10 @@ function comboKey(g, x, y, w, h, code, layers, slots) {
     const k = lay.keys[code]; if (!k) return;
     let base = fresh(k.base) ? k.base : null, shift = fresh(k.shift) ? k.shift : null;
     if (base && shift && norm(base.t) === norm(shift.t)) shift = null;
+    const want = caps ? caps(code, lay.id) : "all";
+    if (want === "none") return;
+    if (want === "digit") { if (k.shift) text(k.shift.t, x + 11, y + 26, 18, k.shift.c); return; }
+    if (want === "base") shift = null;
     const slot = slots[i];
     if (slot === "TL") {
       const letter = code.startsWith("Key") && base && /^[a-z]$/i.test(base.t);
@@ -205,7 +215,7 @@ function render() {
     const g = el("g", { class: "key" + (entry ? "" : " mod") });
     const d = shape === "ENTER" ? enter(x, y) : rect(x + G, y + G, w - 2 * G, h - 2 * G);
     g.append(el("path", { d, class: "cap" }));
-    if (entry && multi) comboKey(g, x, y, w, h, code, sel.layers, slots);
+    if (entry && multi) comboKey(g, x, y, w, h, code, sel.layers, slots, sel.caps);
     else if (entry) {
       if (state.heat) {
         const n = (entry.base?.n || 0) + (entry.shift?.n || 0);

@@ -37,12 +37,80 @@ const GAMSAHAMNIDA: [Key; 12] = {
     [KeyD, KeyH, KeyG, KeyR, KeyH, KeyV, KeyH, KeyB, KeyE, KeyM, KeyA, KeyH]
 };
 
+/// A word and its particle (spec §7.0): an English word on QWERTY, then a Korean or Japanese
+/// particle on another layout of the set, in one staged run.
+#[test]
+fn a_word_and_its_particle() {
+    let d = data();
+    let shown = |ids: &[u32], keys: &[(Key, bool)]| {
+        let mut e = Engine::new(d.clone());
+        e.pin_dictionary(None);
+        let mut s = bada::Settings::default();
+        s.enabled = ids.to_vec();
+        e.set_settings(s);
+        e.set_mode(Mode::Henkan);
+        typed(&mut e, keys)
+    };
+    let letters = |text: &str| -> Vec<(Key, bool)> {
+        text.chars()
+            .map(|c| match c {
+                '@' => (Key::BracketLeft, false),
+                c => (Key::from_code(&format!("Key{}", c.to_ascii_uppercase())), c.is_ascii_uppercase()),
+            })
+            .collect()
+    };
+    // bada plain (16): 에 is B, 를 I S I, 는 L S L, 에서 B O A
+    assert_eq!(shown(&[0, 16], &letters("Claudeb")).preedit, "Claude에");
+    assert_eq!(shown(&[0, 16], &letters("reportisi")).preedit, "report를");
+    assert_eq!(shown(&[0, 16], &letters("APIisi")).preedit, "API를");
+    assert_eq!(shown(&[0, 16], &letters("clientboa")).preedit, "client에서");
+    // bada (13): 에 is F O
+    assert_eq!(shown(&[0, 13], &letters("Claudefo")).preedit, "Claude에");
+    // a Japanese particle after a name: で is W @; one key is offered, not shown (の is K)
+    assert_eq!(shown(&[0, 20], &letters("GitHubw@")).preedit, "GitHubで");
+    let out = shown(&[0, 20], &letters("Claudek"));
+    assert_eq!(out.preedit, "Claudek");
+    assert!(out.menu.iter().any(|m| m == "Claudeの"), "{:?}", out.menu);
+    // an English word stays whole, and so does Korean
+    assert_eq!(shown(&[0, 16], &letters("then")).preedit, "then");
+    assert_eq!(shown(&[0, 16, 20], &letters("PowerPoint")).preedit, "PowerPoint");
+    assert_eq!(shown(&[0, 16], &letters("hflkek")).preedit, "한국");
+    // without QWERTY there is no such reading
+    assert_ne!(shown(&[16], &letters("Claudeb")).preedit, "Claude에");
+}
+
+/// The default henkan candidate is bada plain (16; docs/layouts/16-bada-plain.md): vowels under
+/// the left hand, consonants under the right.
+#[test]
+fn bada_plain_is_the_default() {
+    use Key::*;
+    let typed_on_default = |keys: &[(Key, bool)]| {
+        let mut e = Engine::new(data());
+        assert_eq!(e.settings().enabled, [16]);
+        e.set_mode(Mode::Henkan);
+        typed(&mut e, keys).preedit
+    };
+    // 감사합니다: ㄱ(K) ㅏ(F) ㅁ(P) ㅅ(O) ㅏ ㅎ(H) ㅏ ㅂ(N) ㄴ(L) ㅣ(D) ㄷ(;) ㅏ
+    let plain = [KeyK, KeyF, KeyP, KeyO, KeyF, KeyH, KeyF, KeyN, KeyL, KeyD, Semicolon, KeyF].map(|k| (k, false));
+    assert_eq!(typed_on_default(&plain), "감사합니다");
+    // 한국어: the last ㅓ with ⇧ starts its own syllable on ㅇ; without it, it takes the ㄱ (한구거)
+    let mut hangugeo = [KeyH, KeyF, KeyL, KeyK, KeyE, KeyK, KeyA].map(|k| (k, false));
+    assert_eq!(typed_on_default(&hangugeo), "한구거");
+    hangugeo[6].1 = true;
+    assert_eq!(typed_on_default(&hangugeo), "한국어");
+    // ⇧ + a consonant is it and ㅏ: ⇧ㄱ ⇧ㅈ ㅗ ㄱ = 가족
+    assert_eq!(typed_on_default(&[(KeyK, true), (KeyU, false), (KeyW, false), (KeyK, false)]), "가족");
+}
+
 #[test]
 fn bada_on_real_words() {
     use Key::*;
     let d = data();
     let plain = |keys: &[Key]| {
         let mut e = Engine::new(d.clone());
+        let mut s = bada::Settings::default();
+        s.enabled = vec![13];
+        e.set_settings(s);
         e.set_mode(Mode::Henkan);
         typed(&mut e, &keys.iter().map(|&k| (k, false)).collect::<Vec<_>>())
     };
@@ -182,6 +250,9 @@ fn typo_suggestions_stay_under_the_typed_reading() {
     let d = data();
     let run = |keys: &[(Key, bool)]| {
         let mut e = Engine::new(d.clone());
+        let mut s = bada::Settings::default();
+        s.enabled = vec![13];
+        e.set_settings(s);
         e.set_mode(Mode::Henkan);
         typed(&mut e, keys)
     };
@@ -355,6 +426,57 @@ fn bada_roman_ranks_the_spelling_first() {
 
 fn typed_out(e: &mut Engine, keys: &[(Key, bool)]) -> String {
     typed(e, keys).preedit
+}
+
+/// In a set the key models compare the layouts (docs/spec.md §7.0): what is typed on one layout's
+/// keys still shows, whichever of the layout's ways a person types it.
+#[test]
+fn a_set_shows_the_layout_that_was_typed() {
+    let d = data();
+    let shown = |layouts: &[u32], keys: &[(Key, bool)]| {
+        let mut e = Engine::new(d.clone());
+        e.pin_dictionary(None);
+        let mut s = bada::Settings::default();
+        s.enabled = layouts.to_vec();
+        e.set_settings(s);
+        typed_out(&mut e, keys)
+    };
+    let letters = |w: &str| -> Vec<(Key, bool)> {
+        w.chars().map(|c| (Key::from_code(&format!("Key{}", c.to_ascii_uppercase())), c.is_ascii_uppercase())).collect()
+    };
+    // English beside Korean: common words that are Korean words on the other layout's keys
+    // (the 판, to 페, and 덕 on 13), a capital, a word no list has
+    for sets in [&[0, 13][..], &[0, 10], &[0, 13, 20], &[0, 15, 21]] {
+        for word in ["the", "to", "and", "The", "kubernetes"] {
+            assert_eq!(shown(sets, &letters(word)), word, "{sets:?}");
+        }
+    }
+    // Korean on 13 beside English and kana, with the final-only keys (bada::typo::bada_keys: ㄴ on K,
+    // ㅇ on J, ㄹ on L) and with the keys that are an initial or a final (ㄴ on E, ㄹ on C)
+    for word in ["한국", "사람들이", "있습니다", "그리고", "안녕하세요", "생각합니다"] {
+        let keys: Vec<(Key, bool)> = bada::typo::bada_keys(word).unwrap().iter().map(|p| (p.key, p.shift)).collect();
+        for sets in [&[0, 13][..], &[13, 20], &[0, 13, 20], &[13, 21]] {
+            assert_eq!(shown(sets, &keys), word, "{sets:?}");
+        }
+    }
+    use Key::*;
+    let plain = |keys: &[Key]| keys.iter().map(|&k| (k, false)).collect::<Vec<_>>();
+    assert_eq!(shown(&[0, 13], &plain(&[KeyV, KeyH, KeyE, KeyD, Slash, KeyD])), "한국");
+    assert_eq!(shown(&[0, 13], &plain(&[KeyV, KeyH, KeyK, KeyD, Slash, Semicolon])), "한국");
+    // A full stop after a short Korean word doesn't turn it English (with 18 every key is staged)
+    let stop = |w: &str| letters(w).into_iter().chain([(Period, false)]).collect::<Vec<_>>();
+    assert_eq!(shown(&[0, 18], &stop("na")), "나.");
+    assert_eq!(shown(&[0, 18], &stop("hanguk")), "한국.");
+    assert_eq!(shown(&[0, 18], &stop("it")), "it.");
+    // Japanese in romaji beside English and Korean: Hepburn, ん as one n, kunrei (but `sinbun`
+    // beside 15, where it spells 신분)
+    for sets in [&[0, 21][..], &[13, 21], &[0, 15, 21]] {
+        for (typed, want) in [("nihongo", "日本語"), ("benkyou", "勉強"), ("shinbun", "新聞"), ("sinbun", "新聞"), ("konnichiha", "こんにちは")] {
+            if typed != "sinbun" || !sets.contains(&15) {
+                assert_eq!(shown(sets, &letters(typed)), want, "{typed} {sets:?}");
+            }
+        }
+    }
 }
 
 /// QWERTY and layout 15 together: a real English word that's no Korean word types as English
