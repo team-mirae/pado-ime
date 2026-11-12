@@ -32,6 +32,9 @@ const PRODUCTION_RATE: f64 = 0.80;
 const LEVELS: [&str; 3] = ["experimental", "production", "perfect"];
 /// Plans tried per syllable, kept per step.
 const BEAM: usize = 4;
+/// Layout sets: the least the first row may be right, as the mean over the sets (docs/robot.md,
+/// "Layout sets"; as built 93.9%, the layouts alone 94.3%).
+const SETS_ROW0: f64 = 0.93;
 
 // ---------- data ----------
 
@@ -116,6 +119,8 @@ fn layouts() -> Vec<Layout> {
 struct Item {
     text: String,
     reading: String,
+    /// Times it occurs in the corpus.
+    n: usize,
 }
 
 struct Corpus {
@@ -128,6 +133,11 @@ struct Corpus {
 }
 
 fn corpora(language: &str) -> Vec<Corpus> {
+    corpora_in(&[root("tests/data/robot")], language)
+}
+
+/// The language's corpora in these directories: `en-*`, `ko-*` or `ja-*` files.
+fn corpora_in(dirs: &[String], language: &str) -> Vec<Corpus> {
     let prefix = match language {
         "english" => "en-",
         "korean" => "ko-",
@@ -135,8 +145,8 @@ fn corpora(language: &str) -> Vec<Corpus> {
         _ => return vec![],
     };
     let limit: usize = std::env::var("ROBOT_LIMIT").ok().and_then(|v| v.parse().ok()).unwrap_or(usize::MAX);
-    let mut files: Vec<_> = std::fs::read_dir(root("tests/data/robot")).unwrap().flatten().map(|e| e.path()).collect();
-    files.sort();
+    let mut files: Vec<_> = dirs.iter().flat_map(|d| std::fs::read_dir(d).unwrap().flatten().map(|e| e.path())).collect();
+    files.sort_by_key(|p| p.file_name().map(|n| n.to_os_string()));
     let mut out = vec![];
     for path in files {
         let name = path.file_name().unwrap().to_string_lossy().to_string();
@@ -144,15 +154,20 @@ fn corpora(language: &str) -> Vec<Corpus> {
             continue;
         }
         let text = std::fs::read_to_string(&path).unwrap();
-        let mut seen = HashSet::new();
-        let mut items = vec![];
+        let mut seen: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+        let mut items: Vec<Item> = vec![];
         let mut skipped = 0;
+        let mut add = |items: &mut Vec<Item>, text: &str, reading: &str| match seen.get(text) {
+            Some(&i) => items[i].n += 1,
+            None => {
+                seen.insert(text.to_string(), items.len());
+                items.push(Item { text: text.into(), reading: reading.into(), n: 1 });
+            }
+        };
         for line in text.lines().filter(|l| !l.starts_with('#')) {
             if prefix == "ja-" {
                 let Some((surface, reading)) = line.split_once('\t') else { continue };
-                if seen.insert(surface.to_string()) {
-                    items.push(Item { text: surface.into(), reading: reading.into() });
-                }
+                add(&mut items, surface, reading);
                 continue;
             }
             let word_char = |c: char| if prefix == "en-" { c.is_ascii_alphanumeric() || c == '\'' } else { ('가'..='힣').contains(&c) };
@@ -167,8 +182,8 @@ fn corpora(language: &str) -> Vec<Corpus> {
                 }
                 let w = std::mem::take(&mut word);
                 let w = w.trim_matches('\'').to_string();
-                if !w.is_empty() && seen.insert(w.clone()) {
-                    items.push(Item { text: w.clone(), reading: w });
+                if !w.is_empty() {
+                    add(&mut items, &w, &w);
                 }
             }
         }
@@ -180,24 +195,50 @@ fn corpora(language: &str) -> Vec<Corpus> {
 
 // ---------- the screen ----------
 
-/// What the screen shows after the presses on a fresh engine: everything committed and the
-/// marked text, and the menu's rows from entry 0.
-fn screen(d: &Arc<Data>, id: u32, presses: &[Press]) -> (String, Vec<String>) {
+/// What typing showed on a fresh engine with these layouts enabled: the screen after every press
+/// (everything committed and the marked text), and the menu's rows from entry 0 after the last.
+struct Typed {
+    steps: Vec<String>,
+    menu: Vec<String>,
+}
+
+impl Typed {
+    fn shown(&self) -> &str {
+        self.steps.last().map(String::as_str).unwrap_or("")
+    }
+    /// The row the wanted text is in: 0 if it shows, else its place among the first `TOP` rows.
+    fn row(&self, want: &str) -> Option<usize> {
+        if self.shown() == want {
+            return Some(0);
+        }
+        self.menu.iter().take(TOP).position(|m| m == want)
+    }
+}
+
+fn typed(d: &Arc<Data>, ids: &[u32], presses: &[Press]) -> Typed {
     let mut e = Engine::new(d.clone());
     e.pin_dictionary(None);
     let mut s = Settings::default();
-    s.enabled = vec![id];
+    s.enabled = ids.to_vec();
     e.set_settings(s);
     e.set_mode(Mode::Henkan);
-    let mut shown = String::new();
+    let mut committed = String::new();
+    let mut steps = Vec::with_capacity(presses.len());
     let mut out = bada::Output::default();
     for &(k, shift) in presses {
         out = e.key(k, if shift { Mods::SHIFT } else { Mods::NONE });
-        shown.push_str(&out.commit);
+        committed.push_str(&out.commit);
+        steps.push(format!("{committed}{}", out.preedit));
     }
-    shown.push_str(&out.preedit);
     let menu = out.menu.get(out.zero..).map(|m| m.to_vec()).unwrap_or_default();
-    (shown, menu)
+    Typed { steps, menu }
+}
+
+/// What the screen shows after the presses with only this layout enabled: everything committed
+/// and the marked text, and the menu's rows from entry 0.
+fn screen(d: &Arc<Data>, id: u32, presses: &[Press]) -> (String, Vec<String>) {
+    let t = typed(d, &[id], presses);
+    (t.shown().to_string(), t.menu)
 }
 
 // ---------- Korean, composed ----------
@@ -289,6 +330,11 @@ enum Fail {
 
 /// Types a Korean word syllable by syllable, keeping the plans whose screen shows the word so far.
 fn type_composed(d: &Arc<Data>, l: &Layout, word: &str) -> Result<usize, Fail> {
+    composed_plans(d, l, word).map(|_| 0)
+}
+
+/// The plans that type a Korean word, the one a person reaches for first.
+fn composed_plans(d: &Arc<Data>, l: &Layout, word: &str) -> Result<Vec<Vec<Press>>, Fail> {
     let syl: Vec<char> = word.chars().collect();
     let mut beam: Vec<Vec<Press>> = vec![vec![]];
     for k in 0..syl.len() {
@@ -318,7 +364,7 @@ fn type_composed(d: &Arc<Data>, l: &Layout, word: &str) -> Result<usize, Fail> {
         }
         beam = next;
     }
-    Ok(0)
+    Ok(beam)
 }
 
 // ---------- Korean, transcribed in kana (19) ----------
@@ -827,6 +873,287 @@ fn robot_types_the_corpora() {
         }
     }
     assert!(failures.is_empty(), "robot failures:\n{}", failures.join("\n"));
+}
+
+// ---------- layout sets ----------
+
+/// The language a declared language belongs to: kana and romaji both type Japanese.
+fn group(language: &str) -> &'static str {
+    match language {
+        "english" => "english",
+        "korean" => "korean",
+        "japanese_kana" | "japanese_romaji" => "japanese",
+        _ => "",
+    }
+}
+
+/// `f(0..n)` on every core, the results in order.
+fn parallel<T: Send, F: Fn(usize) -> T + Sync>(n: usize, f: F) -> Vec<T> {
+    let next = std::sync::atomic::AtomicUsize::new(0);
+    let threads = std::thread::available_parallelism().map_or(4, |x| x.get()).min(n.max(1));
+    let mut out: Vec<(usize, T)> = std::thread::scope(|s| {
+        let handles: Vec<_> = (0..threads)
+            .map(|_| {
+                s.spawn(|| {
+                    let mut done = vec![];
+                    loop {
+                        let i = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                        if i >= n {
+                            break;
+                        }
+                        done.push((i, f(i)));
+                    }
+                    done
+                })
+            })
+            .collect();
+        handles.into_iter().flat_map(|h| h.join().unwrap()).collect()
+    });
+    out.sort_by_key(|x| x.0);
+    out.into_iter().map(|x| x.1).collect()
+}
+
+/// The keys a person presses for an item on its layout: the plan that works with only that layout
+/// enabled (for 15 and 18, the first spelling that shows the word, else the first that offers it).
+fn plan_item(d: &Arc<Data>, l: &Layout, item: &Item) -> Option<Vec<Press>> {
+    match l.input.as_str() {
+        "direct" => spell(l, &item.text),
+        "compose" => composed_plans(d, l, &item.text).ok()?.into_iter().next(),
+        "roman" => {
+            let plans = roman_plans(l, &item.text)?;
+            let rows: Vec<Option<usize>> = plans.iter().map(|p| typed(d, &[l.id], p).row(&item.text)).collect();
+            let best = rows.iter().position(|r| *r == Some(0)).or_else(|| rows.iter().position(Option::is_some)).unwrap_or(0);
+            plans.into_iter().nth(best)
+        }
+        "kana" => kana_plan(l, &item.reading),
+        "romaji" => romaji_plan(l, &item.reading),
+        _ => None,
+    }
+}
+
+/// One item as a person types it on its own layout: the keys, and what they show alone.
+struct Planned {
+    item: Item,
+    keys: Vec<Press>,
+    alone: Typed,
+}
+
+/// How one layout's items of one corpus came out in a set. Everything but `items` is weighted by
+/// how often each item occurs in the corpus.
+#[derive(Default, Clone)]
+struct SetTally {
+    items: usize,
+    tokens: f64,
+    /// In the first row, and in the first `TOP` rows: with only the layout enabled, and in the set.
+    alone0: f64,
+    alone5: f64,
+    set0: f64,
+    set5: f64,
+    /// Presses after which the set shows what the layout alone shows (a share per item).
+    same: f64,
+    /// First alone, not first in the set: occurrences, the wanted text, what showed.
+    misses: Vec<(usize, String, String)>,
+}
+
+impl SetTally {
+    fn add(&mut self, p: &Planned, t: &Typed) {
+        let n = p.item.n as f64;
+        let (alone, set) = (p.alone.row(&p.item.text), t.row(&p.item.text));
+        self.items += 1;
+        self.tokens += n;
+        self.alone0 += if alone == Some(0) { n } else { 0.0 };
+        self.alone5 += if alone.is_some() { n } else { 0.0 };
+        self.set0 += if set == Some(0) { n } else { 0.0 };
+        self.set5 += if set.is_some() { n } else { 0.0 };
+        let same = p.alone.steps.iter().zip(&t.steps).filter(|(a, b)| a == b).count();
+        self.same += n * same as f64 / p.keys.len().max(1) as f64;
+        if alone == Some(0) && set != Some(0) {
+            self.misses.push((p.item.n, p.item.text.clone(), t.shown().to_string()));
+        }
+    }
+    fn merge(&mut self, o: &SetTally) {
+        self.items += o.items;
+        self.tokens += o.tokens;
+        self.alone0 += o.alone0;
+        self.alone5 += o.alone5;
+        self.set0 += o.set0;
+        self.set5 += o.set5;
+        self.same += o.same;
+    }
+    fn rate(&self, x: f64) -> f64 {
+        if self.tokens > 0.0 { x / self.tokens } else { 0.0 }
+    }
+}
+
+/// Layout sets (docs/robot.md, "Layout sets"): every set of two or three layouts that each claim
+/// `production` or `perfect`, each for a different language (kana and romaji are both Japanese).
+/// Each item is typed with the keys of its own layout while every layout of the set is enabled;
+/// the first row should be what the layout shows alone.
+///
+/// ROBOT_SETS=0+13,0+13+20 runs only those sets; ROBOT_SETS_CORPORA=dir:dir reads the corpora from
+/// other directories; ROBOT_SETS_OUT=path writes path-report.md and path.tsv (default
+/// target/robot-sets). Fails under `SETS_ROW0`, on every set and the robot's own corpora. Release
+/// builds only.
+#[test]
+#[cfg_attr(debug_assertions, ignore)]
+fn robot_types_layout_sets() {
+    let started = std::time::Instant::now();
+    let d = data();
+    let all = layouts();
+    let mut members: Vec<(&Layout, &str)> = all
+        .iter()
+        .filter_map(|l| {
+            let claims = |g: &&String| matches!(l.reliability.get(*g).map(String::as_str), Some("production" | "perfect"));
+            l.languages.iter().filter(|g| !group(g).is_empty()).find(claims).map(|g| (l, g.as_str()))
+        })
+        .collect();
+    members.sort_by_key(|m| m.0.id);
+    let mut sets: Vec<Vec<usize>> = vec![];
+    for a in 0..members.len() {
+        for b in a + 1..members.len() {
+            if group(members[a].1) == group(members[b].1) {
+                continue;
+            }
+            sets.push(vec![a, b]);
+            for c in b + 1..members.len() {
+                if group(members[c].1) != group(members[a].1) && group(members[c].1) != group(members[b].1) {
+                    sets.push(vec![a, b, c]);
+                }
+            }
+        }
+    }
+    sets.sort_by_key(|s| (s.len(), s.clone()));
+    let name = |s: &[usize]| s.iter().map(|&m| members[m].0.id.to_string()).collect::<Vec<_>>().join("+");
+    if let Ok(only) = std::env::var("ROBOT_SETS") {
+        let only: Vec<&str> = only.split(',').map(str::trim).collect();
+        sets.retain(|s| only.contains(&name(s).as_str()));
+    }
+    assert!(!sets.is_empty(), "no layout sets to type");
+    let dirs: Vec<String> = match std::env::var("ROBOT_SETS_CORPORA") {
+        Ok(v) => v.split(':').map(String::from).collect(),
+        Err(_) => vec![root("tests/data/robot")],
+    };
+
+    // Every item planned on its own layout, once.
+    let used: HashSet<usize> = sets.iter().flatten().copied().collect();
+    let corp: Vec<Vec<Corpus>> = members.iter().enumerate().map(|(m, (_, g))| if used.contains(&m) { corpora_in(&dirs, g) } else { vec![] }).collect();
+    let mut jobs = vec![];
+    for (m, cs) in corp.iter().enumerate() {
+        for (c, corpus) in cs.iter().enumerate() {
+            jobs.extend((0..corpus.items.len()).map(|i| (m, c, i)));
+        }
+    }
+    let planned = parallel(jobs.len(), |j| {
+        let (m, c, i) = jobs[j];
+        let item = &corp[m][c].items[i];
+        let keys = plan_item(&d, members[m].0, item)?;
+        let alone = typed(&d, &[members[m].0.id], &keys);
+        Some(Planned { item: item.clone(), keys, alone })
+    });
+    let mut plans: Vec<Vec<Vec<Planned>>> = corp.iter().map(|cs| cs.iter().map(|_| vec![]).collect()).collect();
+    // Items with no plan on their own layout: they count, and fail alone and in every set.
+    let mut unplanned: Vec<Vec<(usize, f64)>> = corp.iter().map(|cs| vec![(0, 0.0); cs.len()]).collect();
+    for (&(m, c, i), p) in jobs.iter().zip(planned) {
+        match p {
+            Some(p) => plans[m][c].push(p),
+            None => {
+                unplanned[m][c].0 += 1;
+                unplanned[m][c].1 += corp[m][c].items[i].n as f64;
+            }
+        }
+    }
+
+    // Every set types every item of its layouts. English numbers (17, 1998) are tallied apart:
+    // their keys are jamo or kana on some layouts, and no corpus of those languages has them.
+    let mut jobs = vec![];
+    for (s, set) in sets.iter().enumerate() {
+        for (k, &m) in set.iter().enumerate() {
+            jobs.extend((0..corp[m].len()).map(|c| (s, k, c)));
+        }
+    }
+    let tallies = parallel(jobs.len(), |j| {
+        let (s, k, c) = jobs[j];
+        let ids: Vec<u32> = sets[s].iter().map(|&m| members[m].0.id).collect();
+        let m = sets[s][k];
+        let (mut words, mut numbers) = (SetTally::default(), SetTally::default());
+        words.items = unplanned[m][c].0;
+        words.tokens = unplanned[m][c].1;
+        for p in &plans[m][c] {
+            let t = typed(&d, &ids, &p.keys);
+            let number = p.item.text.chars().all(|x| x.is_ascii_digit());
+            (if number { &mut numbers } else { &mut words }).add(p, &t);
+        }
+        words.misses.sort_by(|a, b| b.0.cmp(&a.0).then(a.1.cmp(&b.1)));
+        (words, numbers)
+    });
+
+    let pct = |x: f64| format!("{:.2}%", x * 100.0);
+    let mut by_set = String::from("| Set | Row 0 | Alone | Top 5 | While typing | English | Korean | Japanese | Numbers |\n|---|---|---|---|---|---|---|---|---|\n");
+    let mut by_corpus = String::from("| Set | Layout | Corpus | Items | Tokens | Alone, row 0 | Row 0 | Top 5 | While typing |\n|---|---|---|---|---|---|---|---|---|\n");
+    let mut tsv = String::from("set\tlayout\tlanguage\tcorpus\titems\ttokens\talone0\talone5\tset0\tset5\tsame\n");
+    let mut examples = String::new();
+    // Means over the sets: row 0, alone, top 5, while typing.
+    let mut total = [0.0f64; 4];
+    for (s, set) in sets.iter().enumerate() {
+        let mut langs: BTreeMap<&str, [f64; 4]> = BTreeMap::new();
+        let mut numbers = SetTally::default();
+        for (k, &m) in set.iter().enumerate() {
+            let l = members[m].0;
+            // A language's rates: the mean of its corpora's.
+            let mut sum = [0.0f64; 4];
+            let mut n = 0.0;
+            for (c, corpus) in corp[m].iter().enumerate() {
+                let j = jobs.iter().position(|&x| x == (s, k, c)).unwrap();
+                let (t, nums) = &tallies[j];
+                numbers.merge(nums);
+                writeln!(tsv, "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{:.3}", name(set), l.id, group(members[m].1), corpus.name, t.items, t.tokens, t.alone0, t.alone5, t.set0, t.set5, t.same).unwrap();
+                if nums.tokens > 0.0 {
+                    writeln!(tsv, "{}\t{}\tnumbers\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{:.3}", name(set), l.id, corpus.name, nums.items, nums.tokens, nums.alone0, nums.alone5, nums.set0, nums.set5, nums.same).unwrap();
+                }
+                if t.tokens == 0.0 {
+                    continue;
+                }
+                let rates = [t.rate(t.set0), t.rate(t.alone0), t.rate(t.set5), t.rate(t.same)];
+                (0..4).for_each(|i| sum[i] += rates[i]);
+                n += 1.0;
+                writeln!(by_corpus, "| {} | {} | {} | {} | {} | {} | {} | {} | {} |", name(set), l.file, corpus.name, t.items, t.tokens, pct(rates[1]), pct(rates[0]), pct(rates[2]), pct(rates[3])).unwrap();
+                if !t.misses.is_empty() {
+                    writeln!(examples, "\n### {} · {} · {} ({} items)\n", name(set), l.file, corpus.name, t.misses.len()).unwrap();
+                    for (n, want, shown) in t.misses.iter().take(12) {
+                        writeln!(examples, "- {want}: row 0 {shown:?} ({n}×)").unwrap();
+                    }
+                }
+            }
+            if n > 0.0 {
+                langs.insert(group(members[m].1), sum.map(|x| x / n));
+            }
+        }
+        let mean = |i: usize| langs.values().map(|v| v[i]).sum::<f64>() / langs.len().max(1) as f64;
+        (0..4).for_each(|i| total[i] += mean(i) / sets.len() as f64);
+        let lang = |g: &str| langs.get(g).map_or("—".to_string(), |v| format!("{} ({})", pct(v[0]), pct(v[1])));
+        let nums = if numbers.tokens > 0.0 { pct(numbers.rate(numbers.set0)) } else { "—".into() };
+        writeln!(by_set, "| {} | {} | {} | {} | {} | {} | {} | {} | {} |", name(set), pct(mean(0)), pct(mean(1)), pct(mean(2)), pct(mean(3)), lang("english"), lang("korean"), lang("japanese"), nums).unwrap();
+    }
+    let summary = format!(
+        "{} sets: row 0 {}, alone {}, top 5 {}, while typing {} (means over the sets)",
+        sets.len(), pct(total[0]), pct(total[1]), pct(total[2]), pct(total[3])
+    );
+    let mut report = String::from("# Layout sets report\n\nGenerated by `engine/tests/robot.rs` (docs/robot.md, \"Layout sets\").\n\n");
+    writeln!(report, "{summary}\n").unwrap();
+    report += "**Row 0**: the wanted text shows, typed with its own layout's keys while the whole set is enabled. **Alone**: the same with only its layout enabled. **Top 5**: it's in the set's first 5 rows. **While typing**: presses after which the set shows what the layout alone shows. Each is the mean of the set's languages, a language the mean of its corpora, a corpus weighted by how often each item occurs. A language's column: row 0 (alone). **Numbers**: English items that are only digits, in the first row; they aren't in the other columns.\n\n";
+    report += "## Sets\n\n";
+    report += &by_set;
+    report += "\n## By corpus\n\n";
+    report += &by_corpus;
+    report += "\n## First alone, not first in the set\n";
+    report += &examples;
+    let out = std::env::var("ROBOT_SETS_OUT").unwrap_or_else(|_| root("target/robot-sets"));
+    std::fs::write(format!("{out}-report.md"), &report).unwrap();
+    std::fs::write(format!("{out}.tsv"), &tsv).unwrap();
+    eprintln!("{by_set}\n{summary}\nreport: {out}-report.md ({:.0} s)", started.elapsed().as_secs_f64());
+    // The floor is for the whole run: a few sets, other corpora or a few items say something else.
+    let whole = ["ROBOT_SETS", "ROBOT_SETS_CORPORA", "ROBOT_LIMIT"].iter().all(|v| std::env::var(v).is_err());
+    assert!(!whole || total[0] >= SETS_ROW0, "layout sets: the first row is right {}, under {}", pct(total[0]), pct(SETS_ROW0));
 }
 
 // ---------- the JSON is the engine's ----------

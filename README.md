@@ -20,7 +20,7 @@ with the macOS shell taken out and a Windows (TSF) input method in its place, ho
 are bada's, and bada's updates come downstream (see [Staying a fork](docs/windows.md#staying-a-fork)).
 
 The name is the same idea: bada (바다) is the sea, pado (파도) is a wave on it. The layouts keep their
-names: **bada** (13) and **bada roman** (15).
+names: **bada plain** (16, the default), **bada roman** (15) and **bada** (13).
 
 ### Why this was built
 
@@ -35,13 +35,13 @@ There are two modes: **muhenkan** and **henkan**, as on Japanese keyboards. Henk
 the candidates.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/images/layouts/qwerty-bada-kana-dark.png">
-  <img src="docs/images/layouts/qwerty-bada-kana-light.png" alt="QWERTY, bada and kana on one HHKB JIS keyboard">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/layouts/qwerty-bada-plain-kana-dark.png">
+  <img src="docs/images/layouts/qwerty-bada-plain-kana-light.png" alt="QWERTY, bada plain and kana on one HHKB JIS keyboard">
 </picture>
 
-QWERTY (0), bada (13) and Japanese Kana (20) all typed in henkan mode: `3`, `u`, `q` give `3uq`
-(QWERTY), `쪄ㅃ` (bada) and `あなた` (kana) at the same time, ranked. Only the Japanese is a legible
-phrase, so it ranks first.
+QWERTY (0), bada plain (16) and Japanese Kana (20) all typed in henkan mode: `3`, `u`, `q` give
+`3uq` (QWERTY), `｢졔` (bada plain) and `あなた` (kana) at the same time, ranked. Only the Japanese is a
+legible phrase, so it ranks first.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/layouts/qwerty-bada-roman-kana-dark.png">
@@ -53,11 +53,11 @@ QWERTY (0), bada roman (15) and Japanese Kana (20): `g`, `w`, `i`, `h`, `a` give
 
 [**Try bada in a browser**](https://bada.sjun.me/): the same engine.
 
-### bada
+### bada plain
 
-bada (13) was designed so that your wrists never have to move: all movement is your fingers, up and
-down or left and right. That means less strain, and once you're fluent, less fatigue. Don't expect
-faster typing; for that, use 3-set unshifted (14), which allows NKRO typing (모아치기).
+bada plain (16) was designed so that your wrists never have to move: all movement is your fingers, up
+and down or left and right. That means less strain and, once you're fluent, less fatigue. It's the
+default henkan layout.
 
 ### bada roman
 
@@ -65,10 +65,19 @@ bada roman (15) types Korean with roman letters. It started as a joke and turned
 If you type mostly in English and only sometimes in Korean, it's a very good setup. It leaves your
 2-set (KTS) muscle memory alone: you learn which letters map to which jamo, not new key positions.
 
+### bada
+
+Initial layout which started this project. It had the same goal as bada plain, but it proved
+to be less than ideal during extended sessions. Thus, it was redesigned completely into
+bada plain. The old layout is kept in this repository, but is no longer the default.
+
 ### How to install
 
-Build from source on Windows 10 or 11 (x64). You need Visual Studio 2022 Build Tools (C++) and Rust
-with the 32-bit target. Details in [docs/windows.md](docs/windows.md#install).
+Windows 10 or 11 (x64): download `pado-ime-<version>-setup.exe` from
+[Releases](https://github.com/team-mirae/pado-ime/releases) and run it.
+
+Or build from source. You need Visual Studio 2022 Build Tools (C++) and Rust with the 32-bit target.
+Details in [docs/windows.md](docs/windows.md#install).
 
 ```powershell
 git clone https://github.com/team-mirae/pado-ime; cd pado-ime
@@ -85,6 +94,7 @@ Then pick **pado ime** with Win+Space (under 日本語), and restart apps that w
 |---|---|
 | **変換** | Henkan mode. The best candidate shows as you type; **Space** commits it |
 | **Tab**, **↓**, **変換** | The next candidate. **⇧Tab**, **↑**, **⇧変換**: back |
+| **⌃変換** | Fixes what shows: it stays, and the keys after it start anew |
 | **⇧Enter** | Commits what shows, and nothing else |
 | **Esc** | Commits too. It doesn't cancel, unlike most IMEs |
 | **無変換** | Muhenkan mode: plain QWERTY |
@@ -121,15 +131,21 @@ from the first lesson. Same engine.
 |---|---|---|
 | 0 | QWERTY | muhenkan, and English in henkan |
 | 10 | Korean (2-set) | KTS, the standard Korean keyboard |
-| 11 | Korean (legacy-korean) | from JIS Korean |
-| 12 | Korean (legacy-moonshot) | from JIS Moonshot |
 | 13 | Korean (bada) | [docs/layouts/13-bada.md](docs/layouts/13-bada.md) |
-| 14 | Korean (3-set JIS) | 세벌식 for JIS, 모아쓰기 |
 | 15 | Korean (bada roman) | [docs/layouts/15-bada-roman.md](docs/layouts/15-bada-roman.md) |
-| 18 | Korean (Roman) | Korean in romanization |
-| 19 | Korean (Kana) | Korean in kana |
+| 16 | Korean (bada plain) | [docs/layouts/16-bada-plain.md](docs/layouts/16-bada-plain.md), the default |
 | 20 | Japanese (Kana) | JIS kana, with kanji conversion |
 | 21 | Japanese (Romaji) | romaji, with kanji conversion |
+
+### Layouts (other)
+
+| Id | Layout | |
+|---|---|---|
+| 11 | Korean (legacy-korean) | from JIS Korean |
+| 12 | Korean (legacy-moonshot) | from JIS Moonshot |
+| 14 | Korean (3-set JIS) | 세벌식 for JIS, 모아쓰기 |
+| 18 | Korean (Roman) | Korean in romanization |
+| 19 | Korean (Kana) | Korean in kana |
 | 150 | Symbols | symbols and emoji by name |
 | 151 | Unicode | any character by its Unicode name |
 

@@ -14,6 +14,7 @@ enabled together. Ids, kinds and names are the [spec's catalog](../spec.md) (§5
 | 13 | [JIS Bada](13-bada.md) | `Korean (bada)` | henkan, deterministic | Korean: perfect |
 | 14 | [JIS 3-set](14-3set-jis.md) | `Korean (3-set JIS)` | henkan, deterministic | Korean: perfect |
 | 15 | [bada roman](15-bada-roman.md) | `Korean (bada roman)` | henkan, ranked | Korean: production |
+| 16 | [bada plain](16-bada-plain.md) | `Korean (bada plain)` | henkan, deterministic | Korean: perfect |
 | 18 | [JIS Korean Roman](18-korean-roman.md) | `Korean (Roman)` | henkan, ranked | Korean: production |
 | 19 | [JIS Kana Korean](19-kana-korean.md) | `Korean (Kana)` | henkan, ranked | Korean: experimental |
 | 20 | [JIS Kana](20-kana.md) | `Japanese (Kana)` | henkan, non-deterministic (kanji conversion) | Japanese (kana): production |

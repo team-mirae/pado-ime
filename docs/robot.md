@@ -6,7 +6,7 @@ Japanese)?", on law texts and everyday sentences.
 
     cd engine && cargo test --release --test robot -- --nocapture
 
-About half a minute; release builds only (`#[cfg_attr(debug_assertions, ignore)]`: in debug it takes minutes). The report, with failing examples:
+About a minute; release builds only (`#[cfg_attr(debug_assertions, ignore)]`: in debug it takes minutes). The report, with failing examples:
 `engine/target/robot-report.md`. `ROBOT_LIMIT=n` types only the first n distinct items of each corpus.
 
 ## What it knows
@@ -72,7 +72,7 @@ push to main and every pull request, and puts the report in the run's summary.
 | Layout | Language | Claims |
 |---|---|---|
 | 00 | english | perfect |
-| 10–14 | korean | perfect |
+| 10–14, 16 | korean | perfect |
 | 15 | korean | production (99.7% or more of each corpus, 96–99.9% in the first row; the English dictionary and romaji shortcuts aren't typed) |
 | 18 | korean | production (99.5% or more of each corpus; 63–83% in the first row, the rest from the menu) |
 | 19 | korean | experimental (69% on Common Voice; the gaps are open questions in [layouts/19-kana-korean.md](layouts/19-kana-korean.md#open-questions)) |
@@ -102,3 +102,52 @@ in their dictionary form, with readings; 私 read わたし, words with digits l
 English is typed word by word (letters, digits, apostrophes), Korean by runs of Hangul, Japanese by
 phrase (a content word and the particles and auxiliaries after it, read by SudachiPy). Everything
 else in a line (punctuation, Latin and digits in Korean) is counted and left out.
+
+## Layout sets
+
+In henkan mode every enabled layout reads every keystroke and the readings are ranked
+([spec.md](spec.md) §4.3, §7.0). `robot_types_layout_sets` measures that ranking. It takes every set
+of two or three layouts that each claim `production` or `perfect`, each for a different language
+(kana and romaji are both Japanese): English 0; Korean 10–16 and 18; Japanese 20 and 21. That is 42
+sets: 26 pairs and 16 triples. Every item of each member's corpora is typed with **its own layout's
+keys** on a fresh engine with the whole set enabled.
+
+| Measure | Meaning |
+|---|---|
+| Row 0 | the wanted text shows |
+| Alone | the same with only the item's layout enabled: the most a ranking can reach |
+| Top 5 | the wanted text is in the set's first 5 rows |
+| While typing | presses after which the set shows what the layout shows alone |
+| Numbers | English items that are only digits (`17`, `1998`) in the first row; they aren't in the other measures |
+
+A set's value is the mean of its languages, a language the mean of its corpora, and a corpus is
+weighted by how often each item occurs. The headline is the mean over the sets.
+
+It runs with the rest of the robot and writes `engine/target/robot-sets-report.md` (the sets, each
+corpus, and per set and corpus the items that were first alone and not first in the set, most
+frequent first) and `engine/target/robot-sets.tsv` (one line per set, layout and corpus).
+
+- `ROBOT_SETS=0+13,0+13+20` types only those sets.
+- `ROBOT_SETS_CORPORA=dir:dir` reads the corpora from other directories (files named as above).
+- `ROBOT_SETS_OUT=path` writes `path-report.md` and `path.tsv`.
+
+The run fails if the first row is right less than **93%** of the time (the mean over the sets, on
+the robot's own corpora and every set). As built, with the key models ([spec.md](spec.md) §7.0):
+
+| | Row 0 | Top 5 | While typing | English | Korean | Japanese |
+|---|---|---|---|---|---|---|
+| Rules only (0.2.2; the 37 sets without 16) | 82.3% | 97.6% | 63.3% | | | |
+| Key models | 93.9% | 98.5% | 90.8% | 99.6% | 99.4% | 83.1% |
+| The layouts alone | 94.3% | | | 100% | 99.7% | 83.7% |
+
+What is left is mostly keys that are a word in two languages (`so` and 제 on bada, `to` and と), where
+the commoner one shows, and single letters. The weakest sets are the ones that share their letters:
+18+21 (89.9%) and 15+21 (90.7%).
+
+Bada (13) and bada plain (16) in the same company: the first row right, and in brackets the presses
+after which the set shows what the layout shows alone.
+
+| Korean layout | + QWERTY | + kana | + romaji | + QWERTY + kana | + QWERTY + romaji |
+|---|---|---|---|---|---|
+| 13 bada | 99.7% (94.8%) | 91.4% (92.5%) | 91.8% (95.3%) | 93.9% (87.1%) | 94.2% (90.0%) |
+| 16 bada plain | 99.7% (91.9%) | 91.4% (94.0%) | 91.7% (93.5%) | 94.0% (86.3%) | 94.1% (87.4%) |

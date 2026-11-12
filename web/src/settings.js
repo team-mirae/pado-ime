@@ -34,7 +34,7 @@ const WEB_STORE = "bada-web";
 
 export function defaults() {
   return {
-    enabled: [13], default_muhenkan: 0, use_profiles: false, profiles: {}, weights: {}, profile_keys: {},
+    enabled: [16], default_muhenkan: 0, use_profiles: false, profiles: {}, weights: {}, profile_keys: {},
     kana_in_profile: {}, profile_order: ["mac-kana", "henkan", "katakana"], skin_tones: [...ALL_TONES],
     script_forms: false, negative_method: null, intercept_f: true, fkeys: {}, ja_shortcuts: true,
     caps_lock: "toggle", caps_rule: "allcaps",

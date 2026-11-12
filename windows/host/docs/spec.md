@@ -97,7 +97,7 @@ between them. **bada-windows registers one TSF profile, which handles both modes
 ## 4. Language keys
 
 The host handles these itself (bada-compatible §7.4); they reach the engine only as `Lang1`, "next
-menu entry" (⇧: previous). They're recognised by **scan code**, so a key works whatever layout Windows
+menu entry" (⇧: previous; ⌃: bada's "fix what shows"). They're recognised by **scan code**, so a key works whatever layout Windows
 loaded; by virtual key only for injected keys without a scan code.
 
 | Key | Scan code | What it does |
@@ -109,9 +109,10 @@ loaded; by virtual key only for injected keys without a scan code.
 | かな (an Apple JIS keyboard's) | `0xF2` / `0x72` **[measure]** | Henkan mode, profile `mac-kana` (setting `KanaKey`; `none` passes it to the app) |
 | The Caps Lock key | `0x3A` | §5 |
 | ⌃⌥⇧ (MEH) + a profile key | | The other mode (bada's ⌃⌥⇧かな) |
+| ⌃ + a profile key | | In henkan, `Lang1` with ⌃ to the engine (bada's ⌃かな: fixes what shows, bada spec §6.3). In muhenkan, nothing |
 
 - Held down, a language key acts once (auto-repeats are eaten and ignored).
-- A profile key with ⌃, ⌥ or ⊞ (but not all of ⌃⌥⇧) is eaten and does nothing.
+- A profile key with ⌥ or ⊞ (but not all of ⌃⌥⇧), or with ⌃ and ⇧, is eaten and does nothing.
 - 半角/全角 (`0x29`) is not a language key: it's the engine's `Backquote` (bada's full-width /
   half-width; shout's "shout the selection"). Under the Japanese layout it arrives as `VK_OEM_AUTO` /
   `VK_OEM_ENLW`, and ⌥ + it as `VK_KANJI` (inherited, FKeyIME); all are `Backquote`.

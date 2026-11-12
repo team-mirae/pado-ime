@@ -81,6 +81,41 @@ void TestPado(const Module& module, const std::string& dictionary) {
         t.Type("Escape");
     }
     {
+        // ⌃変換 (bada 0.3.1's ⌃かな, spec §6.3): fixes what shows, still staged; the keys after it
+        // read on, and what was fixed doesn't change. With nothing staged, nothing.
+        Settings(engine, R"({"enabled":[0,15]})");
+        Host host(engine, HostSettings{}, Mode::kHenkan);
+        TextField field;
+        Typist t{host, field};
+        host.Start(Mode::kHenkan, kProfileHenkan, field);
+        t.Type("C-henkan");
+        CHECK(field.text().empty() && field.preedit().empty() && host.mode() == Mode::kHenkan);
+        t.Type("KeyG KeyW KeyI KeyH KeyA C-henkan");
+        CHECK_EQ(field.preedit(), std::string("귀하"));
+        CHECK(host.composing());
+        t.Type("KeyG KeyA");
+        CHECK_EQ(field.preedit().rfind("귀하", 0), 0u);
+        CHECK(field.preedit() != "귀하");
+        t.Type("Escape");
+        CHECK_EQ(field.text().rfind("귀하", 0), 0u);
+        // In muhenkan, ⌃変換 does nothing (and doesn't enter henkan).
+        host.SwitchMode(Mode::kMuhenkan, field);
+        t.Type("C-henkan");
+        CHECK(host.mode() == Mode::kMuhenkan);
+    }
+    {
+        // bada plain (16), the default henkan candidate since bada 0.3.0: it reads keys.
+        Settings(engine, R"({})");
+        Host host(engine, HostSettings{}, Mode::kMuhenkan);
+        TextField field;
+        Typist t{host, field};
+        host.Start(Mode::kMuhenkan, kProfileHenkan, field);
+        t.Type("henkan KeyJ KeyF");
+        CHECK(host.mode() == Mode::kHenkan);
+        CHECK(!field.preedit().empty() && field.preedit() != "jf");
+        t.Type("Escape");
+    }
+    {
         // Japanese kana (20), README's example: 3 u q → あなた among the readings.
         Settings(engine, R"({"enabled":[20]})");
         Host host(engine, HostSettings{}, Mode::kHenkan);

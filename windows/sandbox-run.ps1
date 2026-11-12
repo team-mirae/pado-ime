@@ -1,7 +1,7 @@
-﻿# Inside Windows Sandbox (windows/sandbox.ps1): installs the mapped build, adds pado to the language
-# list, records what was registered, runs windows/type-test.ps1, writes C:\results, and shuts the
+﻿# Inside Windows Sandbox (windows/sandbox.ps1): installs the mapped build (-Setup: with the
+# installer), adds pado to the language list, records what was registered, runs windows/type-test.ps1, writes C:\results, and shuts the
 # Sandbox down (unless -Keep). Everything in the Sandbox is gone when it closes.
-param([switch] $Keep)
+param([switch] $Keep, [switch] $Setup)
 $ErrorActionPreference = 'Continue'
 $log = 'C:\results\results.txt'
 & {
@@ -15,17 +15,27 @@ $log = 'C:\results\results.txt'
     Copy-Item "$from\host\tools\*" C:\pado\host\tools\ -Recurse
     Copy-Item "$from\host\build\ime\pado\*" C:\pado\host\build\ime\pado\ -Recurse
     Copy-Item "$from\host\build\x64\bw_testpad.exe" C:\pado\host\build\x64\
-    & C:\pado\install.ps1
+    if ($Setup) {
+        # The release installer (windows/installer.ps1), silent; it adds pado to the language list itself.
+        $exe = Get-ChildItem "$from\host\build\installer\pado-ime-*-setup.exe" | Sort-Object LastWriteTime | Select-Object -Last 1
+        "  $($exe.Name)"
+        $p = Start-Process $exe.FullName '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /LOG=C:\results\setup.log' -Wait -PassThru
+        "  exit code $($p.ExitCode)"
+    } else {
+        & C:\pado\install.ps1
+    }
     $manifest = Get-Content "$env:ProgramFiles\bada-windows\pado\ime.json" -Raw -Encoding utf8 | ConvertFrom-Json
     $clsid = $manifest.windows.clsid
-    # Already elevated here, so the installer skipped its unelevated half: the language list.
-    $tip = '0411:{0}{1}' -f $clsid, $manifest.windows.profile
-    $list = Get-WinUserLanguageList
-    $ja = (New-WinUserLanguageList ja-JP)[0]
-    $ja.InputMethodTips.Clear()
-    $ja.InputMethodTips.Add($tip)
-    $list.Add($ja)
-    Set-WinUserLanguageList $list -Force
+    if (-not $Setup) {
+        # Already elevated here, so install.ps1 skipped its unelevated half: the language list.
+        $tip = '0411:{0}{1}' -f $clsid, $manifest.windows.profile
+        $list = Get-WinUserLanguageList
+        $ja = (New-WinUserLanguageList ja-JP)[0]
+        $ja.InputMethodTips.Clear()
+        $ja.InputMethodTips.Add($tip)
+        $list.Add($ja)
+        Set-WinUserLanguageList $list -Force
+    }
     # The diagnostic log: activations, focus, the engine's loading and errors (never typed text).
     New-Item HKCU:\Software\bada-windows\pado -Force -ErrorAction SilentlyContinue | Out-Null
     Set-ItemProperty HKCU:\Software\bada-windows\pado DiagnosticLog 1 -Type DWord

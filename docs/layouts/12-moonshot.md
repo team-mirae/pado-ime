@@ -41,7 +41,8 @@ without its predictions.
 - **Implied ㅇ** and the same vowel key twice (마리 → 말이), as in [11](11-korean-legacy.md); no Shift
   held over (⇧ㄱ ⇧ㅏ → 가아).
 - Enabling **0, 12, 20** together reproduces JIS Moonshot: QWERTY, Moonshot Korean and JIS kana read
-  at once ([spec §4.3](../spec.md)), ranked by this engine's rules, not Moonshot's predictor.
+  at once ([spec §4.3](../spec.md)), ranked by this engine's key models (Moonshot's key model,
+  one per layout: [spec §7.0](../spec.md)), not by Moonshot's whole predictor.
 - Like 11, it publishes `commit` and `commit-bare`.
 
 ## Tools

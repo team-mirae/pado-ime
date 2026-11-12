@@ -42,10 +42,10 @@ Moonshot `A_QWERTY`.
 - Caps Lock on types by the muhenkan rule: ALL CAPS, or UPPER_SNAKE (Space types `_`)
   ([spec §6.7](../spec.md)).
 - It can be a **henkan candidate** too: enabled in henkan mode, its plain reading (the letters as
-  typed) is ranked with the other layouts' readings: a common English word over a Korean reading
-  that's no known word, a rare one too, any known Korean word over both
-  ([spec §6.4](../spec.md)). That's how English words come out of henkan mode without switching
-  ([combinations](combinations.md)).
+  typed) is ranked with the other layouts' readings. Its key model knows what English looks like
+  typed, so keys that look like English show as English (`the`, not 판, beside bada), and a word of
+  `en-words.txt` counts for more ([spec §6.4](../spec.md), [§7.0](../spec.md)). That's how English
+  words come out of henkan mode without switching ([combinations](combinations.md)).
 
 ## Tools
 

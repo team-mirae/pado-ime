@@ -87,11 +87,22 @@ fn semi_voiced(c: char) -> Option<char> {
     }
 }
 
+/// What one press types on layout 20. ⇧ on the number and symbol keys is kana, so their shifted
+/// JIS characters have no key of their own: ⇧⌥ types them, full-width (⇧⌥/ ？, ⇧⌥1 ！), as in the
+/// Korean layouts (docs/layouts/20-kana.md). ⌥ without ⇧, and ⌥ on a letter key, aren't the layout's.
+fn kana_input(p: Press) -> Option<char> {
+    if p.alt {
+        let symbol = p.shift && !p.key.is_letter() && jis_kana(p.key, false).is_some();
+        return if symbol { jis_char(p.key, true).map(full_width) } else { None };
+    }
+    jis_kana(p.key, p.shift)
+}
+
 /// Layout 20: the kana of staged presses, ゛ ゜ attached where they can be.
 pub fn kana_compose(presses: &[Press]) -> String {
     let mut out = String::new();
     for p in presses {
-        let Some(c) = jis_kana(p.key, p.shift) else {
+        let Some(c) = kana_input(*p) else {
             continue;
         };
         let mark: Option<fn(char) -> Option<char>> = match c {
@@ -112,7 +123,7 @@ pub fn kana_compose(presses: &[Press]) -> String {
 }
 
 pub fn kana_takes(p: Press) -> bool {
-    !p.alt && jis_kana(p.key, p.shift).is_some()
+    kana_input(p).is_some()
 }
 
 // ---------- romaji ----------
@@ -498,6 +509,19 @@ mod tests {
             kana_compose(&presses(&[(Digit3, false), (BracketLeft, false)])),
             "あ゛"
         );
+    }
+
+    #[test]
+    fn kana_shift_option_is_the_shifted_jis_character() {
+        let alt = |key, shift| Press { key, shift, alt: true };
+        // か ⇧⌥/ ⇧⌥1 ⇧⌥8 ⇧⌥ろ: full-width, staged with the kana
+        let typed = [Press::new(KeyT, false), alt(Slash, true), alt(Digit1, true), alt(Digit8, true), alt(IntlRo, true)];
+        assert_eq!(kana_compose(&typed), "か？！（＿");
+        assert!(typed.iter().all(|p| kana_takes(*p)));
+        // ⌥ without ⇧, and ⌥ on a letter key, aren't the layout's
+        assert!(!kana_takes(alt(Slash, false)));
+        assert!(!kana_takes(alt(KeyT, true)));
+        assert!(!kana_takes(alt(KeyT, false)));
     }
 
     #[test]

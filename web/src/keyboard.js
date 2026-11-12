@@ -11,10 +11,16 @@ const el = (tag, attrs, text) => {
   return e;
 };
 
+const INITIALS = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ", VOWELS = "ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ";
+const syllable = (i, v) => String.fromCharCode(0xAC00 + (INITIALS.indexOf(i) * 21 + VOWELS.indexOf(v)) * 28);
+/** What a token shows: role "a" is its consonant and ㅏ (가), role "n" its vowel on ㅇ (아), as the
+ *  Keyboard Viewer shows them (mac/tools/make-keylayout.swift). */
+const shown = e => e.r === "a" && INITIALS.includes(e.t) ? syllable(e.t, "ㅏ") : e.r === "n" && VOWELS.includes(e.t) ? syllable("ㅇ", e.t) : e.t;
+
 /** A legend cell list ([{t, r}]) as {t, c}: several entries are one text, "ㅃ/ㅄ". */
 function cell(list) {
   if (!list || !list.length) return null;
-  return { t: list.map(e => e.t).join("/"), c: list[0].r || "x" };
+  return { t: list.map(shown).join("/"), c: list[0].r || "x" };
 }
 
 // Combination keycaps: each layout takes a corner by script, the next free one if it's taken.

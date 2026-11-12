@@ -95,7 +95,10 @@ named below type their JIS characters (owner, 2026-11-11).
   full stop. Not when another enabled layout, QWERTY aside, types
   that key as part of a word (kana's る on `.`, あ on `3`; bada's jamo on the number row): then
   the key is staged as usual, and a bada roman reading with letters after such a key ranks under
-  the others (`3 6 e` shows 青い, not 36에).
+  the others (`3 6 e` shows 青い, not 36에). Beside QWERTY the key is staged too while QWERTY's
+  reading is the one that shows, before the key and with it: `It's`, `U.S.` and `Hello,` are typed
+  through as English. With a Korean reading showing, the key ends the word as above (`don't` comes
+  out 돈't: 돈 is what shows when `'` arrives).
 - **`ts` is a final ㅆ** (`t`, a final ㅅ, and `s` again): `its` 있; before a vowel the default
   gives `s` to the next syllable (`itseo` 잇서) and 있어, a known word, ranks first.
 - **`h` is a final ㅎ** too: `joh` 좋. Before a vowel the default gives `h` to the next syllable

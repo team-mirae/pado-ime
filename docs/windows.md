@@ -12,13 +12,27 @@ InputMethodKit app is replaced by a TSF text input processor.
 | The IME | `windows/pado/ime.json` | pado's manifest: the engine, its 11 data buffers, its permanent GUIDs, its labels (파 / A) and its settings program |
 | Settings | `windows/settings/` | `pado-settings.exe`: bada's settings window as a local page (below) |
 | Build, install, tests | `windows/build.ps1`, `windows/install.ps1`, `windows/test.ps1`, `windows/tests/` | |
+| The installer | `windows/installer.ps1`, `windows/installer/` | Inno Setup 6: `pado-ime-<version>-setup.exe`, released on GitHub by a tag (below) |
 
-Names: **pado ime**, 파도 입력기, パドIME (pado: 파도, a wave). The layouts keep their names: bada (13),
-bada roman (15).
+Names: **pado ime**, 파도 입력기, パドIME (pado: 파도, a wave). The layouts keep their names: bada plain
+(16, the default), bada roman (15), bada (13).
 
 ## Install
 
-From source (there's no installer yet). Windows 10 or 11, x64.
+Windows 10 or 11, x64. **The installer:** `pado-ime-<version>-setup.exe` from
+[Releases](https://github.com/team-mirae/pado-ime/releases) (UAC). It does what `windows/install.ps1`
+does: `Program Files\bada-windows\pado`, registered for 64- and 32-bit apps, the log folder, and, as
+the user who started it, pado ime added to 日本語's keyboards (`windows/installer/user.ps1`). A DLL an
+app has loaded is renamed out of the way, so an update needs no restart; apps load the new one when
+they restart. Uninstall (Settings → Apps) undoes it all; your settings and dictionary stay.
+
+**Releasing:** a tag `v<version>`, the engine's version in `engine/Cargo.toml`, pushed to GitHub:
+`.github/workflows/windows.yml` builds, tests, builds the installer and publishes the release, with
+`windows/installer/notes/v<version>.md` as its notes. `windows/installer.ps1` builds the installer
+here (Inno Setup 6: `winget install JRSoftware.InnoSetup`); `windows/sandbox.ps1 -Setup` tries it in
+Windows Sandbox.
+
+**From source:**
 
 | Tool | Install |
 |---|---|
@@ -48,6 +62,7 @@ bada's keys (spec §6), as bada-windows maps them to a PC JIS keyboard
 | かな: henkan, profile `mac-kana`; in henkan, the next menu entry | **変換**: henkan, profile `henkan`; in henkan, the next menu entry. 変換 is the home key: with profiles off, every key gives the same henkan |
 | 変換, カタカナ (recorded, through Input Monitoring) | **変換**, **カタカナ/ひらがな**: fixed, no recording. An Apple keyboard's かな brings up `mac-kana` |
 | MEH + かな: the other mode | MEH (Ctrl+Alt+Shift) + 変換 / カタカナ: the other mode |
+| ⌃かな: fixes what shows (spec §6.3) | **Ctrl+変換** (or Ctrl + another profile key), in henkan |
 | Tab, ↓ / ⇧Tab, ↑, ⇧Enter, Esc, Space, ⌥Space, 半角/全角, F6–F10, ⌥ + letter | the same, with Alt for ⌥: all of it is the engine's |
 | Caps Lock: bada's (toggle by default) | Caps Lock: Windows' by default; Settings → Layouts → Caps Lock has bada's toggle and transient ([host spec §5](../windows/host/docs/spec.md#5-caps-lock)) |
 
@@ -92,16 +107,16 @@ password fields.
 - **The Keyboard Viewer's bada legends** (`bada.keylayout`) have no Windows counterpart.
 - Everything bada-windows marks **[measure]** or **[decide]** (its spec §10) applies: Apple JIS
   keyboards' 英数 / かな scan codes, the Caps Lock injection, a key for `mac-kana` on PC keyboards.
-- Not built: ARM64, an installer.
+- Not built: ARM64. The installer isn't signed: SmartScreen warns about it until it's known.
 
 ## Testing
 
 | | |
 |---|---|
 | `windows/build.ps1` | builds everything and runs bada-windows' core tests (188 checks per architecture) |
-| `windows/test.ps1` | `windows/tests/pado_tests.cpp` (the built IME loaded as the TIP loads it; QWERTY, 2-set, bada roman, kana, profiles, 半角/全角, the dictionary, typed through the host into a text field; x64 and x86) and the settings server (page, API, token and host guards) |
+| `windows/test.ps1` | `windows/tests/pado_tests.cpp` (the built IME loaded as the TIP loads it; QWERTY, 2-set, bada roman, bada plain, kana, profiles, Ctrl+変換, 半角/全角, the dictionary, typed through the host into a text field; x64 and x86) and the settings server (page, API, token and host guards) |
 | `cargo test` in `engine/` | bada's own tests (`-EngineTests` on `windows/build.ps1`); the typing robot: [robot.md](robot.md) |
-| `windows/sandbox.ps1` | installs the build in Windows Sandbox and runs `windows/type-test.ps1` there, without touching this PC; results in `windows/host/build/sandbox/results.txt`. `-Keep` leaves the Sandbox open to try pado by hand |
+| `windows/sandbox.ps1` | installs the build in Windows Sandbox and runs `windows/type-test.ps1` there, without touching this PC; results in `windows/host/build/sandbox/results.txt`. `-Keep` leaves the Sandbox open to try pado by hand; `-Setup` installs with the installer |
 | `windows/type-test.ps1` | types bada's layouts through the **installed** TIP into bada-windows' test window (a classic Edit, a RichEdit through the IMM layer, a RichEdit on TSF): QWERTY with JIS symbols, 2-set, Esc and 無変換 committing, bada roman, kana with ⇧Tab to hiragana, 半角/全角, profiles, Caps Lock toggle, and the API (what's staged; a password field is a security error) |
 
 Measured in Windows Sandbox (Windows 11 24H2, 2026-11-11): the install registers x64 and x86, the

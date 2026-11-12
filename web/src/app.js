@@ -297,6 +297,7 @@ function press(code, mods, { repeat = false, key = "", synthetic = false } = {})
   if (kana || (pk && !mods.ctrl && !mods.alt && !mods.meta)) {
     if (!repeat) {
       if (kana && mods.ctrl && mods.alt && mods.shift) switchMode(state.mode === "henkan" ? "muhenkan" : "henkan");   // HYPER / MEH
+      else if (kana && mods.ctrl && !mods.alt && !mods.meta && !mods.shift) { if (state.mode === "henkan") apply(engine.key("Lang1", { ctrl: true })); }   // ⌃かな: fix what shows
       else if (state.mode === "henkan") languageKey(pk ?? S.MAC_KANA, mods.shift);
       else {
         state.profile = settings.use_profiles ? pk ?? S.MAC_KANA : S.MAC_KANA;

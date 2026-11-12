@@ -2,7 +2,7 @@
 
 Status: **draft** (2026-11-07). Items marked **[decide]** are not settled: don't implement a guess
 silently. Where the build differs from the design, or has settled an open item for now, the text says
-"as built" (the build is 0.2.2; §7.0 sums it up). The Bada layout itself (id 13) is designed in
+"as built" (the build is 0.3.1; §7.0 sums it up). The Bada layout itself (id 13) is designed in
 [layouts/13-bada.md](layouts/13-bada.md); every layout has its page in [layouts/](layouts/README.md).
 
 ## 1. Names
@@ -77,15 +77,16 @@ act in the input method directly.
 still types in password fields.)
 
 **The Keyboard Viewer** shows the keyboard layout the input method sets (`overrideKeyboard`): in
-muhenkan, ABC (with ろ as `\`); in henkan, **bada's (13) legends**, whatever layouts the profile uses
+muhenkan, ABC (with ろ as `\`); in henkan, **bada plain's (16) legends**, whatever layouts the profile uses
 (one board can't show them all). That layout is `bada.keylayout`, hidden from the input source list and shipped in the
-app (`mac/tools/make-keylayout.swift`): ABC as a JIS keyboard has it, with bada's jamo on the
-unshifted and ⇧ layers, and on a Caps Lock layer of its own, which shows the unshifted jamo (henkan
+app (`mac/tools/make-keylayout.swift`): ABC as a JIS keyboard has it, with bada plain's legends on the
+unshifted and ⇧ layers (its jamo and punctuation; with ⇧ the syllables and digits), and on a Caps
+Lock layer of its own, which shows the unshifted layer (henkan
 ignores Caps Lock, §6.7). Its ⌥, ⌘ and ⌃ layers are ABC's, so shortcuts are unchanged; a key the
-engine passes on that carries a jamo there is typed as ABC types it, by the input method. Muhenkan's
+engine passes on that carries a legend there is typed as ABC types it, by the input method. Muhenkan's
 `qwerty.keylayout` is ABC with ろ as `\` (⇧ `_`), and has the same Caps Lock layer: ABC's capitals.
 Without that layer a keylayout's Caps Lock types its unshifted layer, lowercase. Both files are
-written at build time from ABC and `docs/layouts/13-bada.json`.
+written at build time from ABC and `docs/layouts/16-bada-plain.json`.
 
 ### 4.2 Muhenkan mode
 
@@ -102,9 +103,10 @@ nothing is staged (but the letter a ⌥ + letter variants list shows, §6.2).
 - Muhenkan layouts can be candidates. Enabling **0, 12, 20** reproduces today's JIS Moonshot
   (QWERTY + Moonshot Korean + JIS kana, predicted).
 - The ranker is JIS Moonshot's predictor, generalised from its fixed three readings to the set of
-  enabled candidates. **[decide]** how a candidate the predictor was never trained on (e.g. Bada,
-  Romaji) is scored until it has a model. As built there is no predictor yet: the ranker is rules
-  over word counts (§7.0).
+  enabled candidates: a **key model** per layout says how much the staged keys look like its
+  language typed on it, and the layouts of a set are compared by that (§7.0). **[decide]** how a
+  candidate without a model is scored. As built: 0, 10–16, 18, 20 and 21 have a model; 19 and the
+  searches (150, 151) have none and keep their rule scores (§7.0).
 - A layout reads the staged keys only if it has a meaning for every one of them; one that doesn't
   offers nothing until the keys are committed.
 
@@ -143,6 +145,7 @@ spec has what the layouts share.
 | 13 | JIS Bada | `Korean (bada)` | henkan, deterministic | new: [layouts/13-bada.md](layouts/13-bada.md) |
 | 14 | JIS 3-set (세벌식 JIS, K3S-J) | `Korean (3-set JIS)` | henkan, deterministic | new: [layouts/14-3set-jis.md](layouts/14-3set-jis.md), designed by the owner from 세벌식 순아래; 모아쓰기 (jamo of a syllable in any order) |
 | 15 | bada roman | `Korean (bada roman)` | henkan, ranked (the default reading, or a better-known one, shows; the English dictionary never first) | new: [layouts/15-bada-roman.md](layouts/15-bada-roman.md) |
+| 16 | bada plain | `Korean (bada plain)` | henkan, deterministic | new: [layouts/16-bada-plain.md](layouts/16-bada-plain.md), a candidate to replace 13 (owner, 2026-11-12); the default henkan candidate |
 | 18 | JIS Korean Roman | `Korean (Roman)` | henkan, ranked (the default reading shows; other readings offered) | new: [layouts/18-korean-roman.md](layouts/18-korean-roman.md) |
 | 19 | JIS Kana Korean | `Korean (Kana)` | henkan, ranked (the table's reading shows; other pronunciations offered) | new, minor: [layouts/19-kana-korean.md](layouts/19-kana-korean.md) |
 | 20 | JIS Kana | `Japanese (Kana)` | henkan, non-deterministic (kanji conversion) | JIS Moonshot `A_KANA`: [layouts/20-kana.md](layouts/20-kana.md), §11 |
@@ -154,13 +157,14 @@ Every layout declares whether it is muhenkan or henkan.
 
 ### 5.3 Settings
 
-- the **enabled set** of henkan candidates (default: bada, 13); earlier in the list wins a tie (the
+- the **enabled set** of henkan candidates (default: bada plain, 16); earlier in the list wins a tie (the
   settings window keeps the list in catalog order);
 - the **default muhenkan layout** (英数 enters it);
 - the **default henkan target** for HYPER+かな (§6.1), and the **cycle order** for MEH+かな.
   Without a user order: integer id ascending. (Not built: §7.0.)
 - a **weight** per layout (0–10, default 1): a multiplier on the score of every entry that layout
-  raises, in every profile (before the user's negative words and the typo suggestions);
+  raises, in every profile (before the user's negative words and the typo suggestions; in a set,
+  before the key models' evidence: §7.0);
 - **henkan profiles** (§6.6), off by default: candidates per profile key, links, recorded keys, what
   かな does in each profile, the cycle order, F keys per profile;
 - **script forms** (§6.4), off by default, and the method that offers them;
@@ -230,6 +234,7 @@ JIS Moonshot falls back to the word under the caret; keep that, or do nothing? A
 | Space, Enter, Esc, Tab, … | Commit the preedit as shown, **then** perform the key's normal action |
 | かな, Tab, ↓ | Next entry in the suggestion menu (§6.4) |
 | ⇧かな, ⇧Tab, ↑ | Previous entry; from entry 0 into the negative entries (§6.4) |
+| ⌃かな | **Fixes what shows** (§6.4): the keys so far keep that text and stay staged, and the reading doesn't change. With nothing staged, nothing |
 | ⌫ | Takes back the last staged key, and the preedit is read again without it. With nothing staged, the app's |
 | F keys | Per the F-key bindings (§6.5); by default swallowed, doing nothing |
 | ⌥Space | Commits the preedit, then `　` (U+3000, full-width space) |
@@ -269,11 +274,14 @@ The interpretations of the staged keys form one menu with **signed indexes**:
 
 - Typing lands on **0**. Next (かな, Tab, ↓) goes up from there; previous (⇧かな, ⇧Tab, ↑)
   goes down, and **below 0 into the negative entries**.
-- **A picked entry stays picked** (owner, 2026-11-11). After Next has picked an entry above 0, typing
-  on lands on the best entry that extends it (QWERTY's `inter` picked, then `polate`: `interpolate`;
-  정석 picked, then more letters: 정석기업). If no entry extends it, the pick stays as it is and the
-  new keys start a word of their own after it (`cockpit`'s 콕핏 picked, then `eui`: 콕핏의). Going
-  back to 0 drops the pick; committing ends it.
+- **A picked entry is fixed by typing on** (owner, 2026-11-12; before, 2026-11-11, it could still
+  change when a longer entry extended it). After Next has picked an entry above 0, the next key
+  fixes it: the keys so far keep the picked text, still staged, and the new keys start after it
+  (3 U Q with あなた picked, then more keys: あなた stays). **The layout that was fixed sticks**: its
+  reading of the keys after shows first (QWERTY's `inter` picked, then `polate`: `interpolate`;
+  `cockpit`'s 콕핏 picked, then `eui`: 콕핏의), until a row is chosen by hand again or the text is
+  committed. **⌃かな fixes what shows without picking another row**, the top entry included. ⌫ takes
+  back the keys after a fix, then the fixed text a character at a time.
 - Japanese methods (20 Kana, 21 Romaji) define **−1 hiragana** and **−2 katakana**: from a fresh
   reading, ⇧Tab once is hiragana, twice katakana.
 - **Optional, off by default** (owner, 2026-11-08): Settings → "Script forms below the top entry"
@@ -296,11 +304,13 @@ The interpretations of the staged keys form one menu with **signed indexes**:
   21 Romaji). Today only 20 and 21 offer any.
 - Other conversions are **not** negative entries: half-width comes from ⇧半角/全角, the old F8–F10
   conversions from F-key actions (§6.5), and the plain English reading is a ranked entry (≥ 0)
-  whenever QWERTY (0) is enabled. It ranks by `en-words.txt`: a common word (the list's head) over
-  a Korean reading that's no known word; a **rare word** (its `#! rare` section, Webster's Second
-  from macOS's word list: `engine/tools/build_en_rare.py`) over a Korean reading that's no known word
-  too, but under a common English word and under any known Korean word (owner, 2026-11-11:
-  `interpolate`, not 인텔포라테); other letters last.
+  whenever QWERTY (0) is enabled. `en-words.txt` says whether it's a known word: a common word (the
+  list's head) or a **rare word** (its `#! rare` section, Webster's Second from macOS's word list:
+  `engine/tools/build_en_rare.py`). Beside layouts that have a key model, the key models rank it
+  and a known word counts for more (§7.0; owner, 2026-11-11: `interpolate`, not 인텔포라테). Beside
+  layouts without one it ranks by the table there: a common word over a Korean reading that's no
+  known word, a rare word too, but under a common English word and under any known Korean word;
+  other letters last.
 - **No wrap.** Next on the last entry and previous on the lowest negative entry do nothing.
 - Committing commits the entry shown, whatever its index.
 
@@ -341,6 +351,7 @@ conversion, so apps don't rely on them while a Japanese input source is on).
   | 11, 12 | `commit`, `commit-bare` | §7.0 |
   | 13 bada | `raw`, `prediction-1` … `prediction-5`, `qwerty-fullwidth`, `qwerty-halfwidth`, `hanja` | [layouts/13-bada.md](layouts/13-bada.md) §6 |
   | 15 bada roman | `initials`, `vowels`, `finals`, `fullwidth-latin`, `halfwidth-latin` | [layouts/15-bada-roman.md](layouts/15-bada-roman.md) |
+  | 16 bada plain | `qwerty-fullwidth`, `qwerty-halfwidth`, `initials`, `vowels`, `finals`, `commit-bare` | [layouts/16-bada-plain.md](layouts/16-bada-plain.md) |
   | 20, 21 | `hiragana`, `katakana`, `halfwidth-katakana`, `fullwidth-latin`, `halfwidth-latin` | above |
 - **Only F6–F10** are intercepted: a carry-over from Japanese input methods. Every other F key
   always goes to the app.
@@ -463,9 +474,9 @@ the output.
   the input method's own events, `~/Library/Logs/BadaIME.log`
   ([troubleshooting.md](troubleshooting.md)).
 
-### 7.0 What 0.2.2 builds
+### 7.0 What 0.3.1 builds
 
-- Layouts **0** (QWERTY), **10** (2-set), **11** (JIS Korean), **12** (JIS Moonshot), **13** (Bada, layouts/13-bada.md), **14** (3-set JIS), **15** (bada roman), **18** (Korean Roman), **19** (Kana Korean),
+- Layouts **0** (QWERTY), **10** (2-set), **11** (JIS Korean), **12** (JIS Moonshot), **13** (Bada, layouts/13-bada.md), **14** (3-set JIS), **15** (bada roman), **16** (bada plain, layouts/16-bada-plain.md), **18** (Korean Roman), **19** (Kana Korean),
   **20** (Kana), **21** (Romaji), **150** (Symbols) and **151** (Unicode). 20 and 21 convert to kanji (Mozc's dictionary, §11)
   and, with script forms on, give the negative entries (−1 hiragana, −2 katakana); their menu rows carry romaji / kana notes.
 - 11 and 12 are the Korean readings only, deterministic: the keys, implied ㅇ, the double press and
@@ -474,11 +485,12 @@ the output.
   F-key actions (§6.5), bound to nothing by default: `commit` (this layout's reading as typed,
   whatever ranks first) and `commit-bare` (the same with the implied ㅇ dropped, as JIS Korean's F6:
   ㅏ → ㅏ, 가어 → 가ㅓ, 와 → ㅘ; a typed or asked-for ㅇ and a syllable with a final stay).
-- Ranking is rules over word counts (a known word beats an unknown one), **not yet n-grams**.
-  Layout 13 adds typo suggestions under its reading from a jamo 4-gram model (layouts/13-bada.md §5). It
-  orders the readings of the enabled layouts; layout 13 itself reads its keys one way only. Layout
-  15 uses the same model to choose among readings when none is a known word. Every reading gets a
-  score, and the menu is the readings by score, one row per text:
+- Ranking. Every reading gets a score, and the menu is the readings by score, one row per text. A
+  layout's own readings are scored by rules over word counts (a known word beats an unknown one):
+  the table below. **Between the layouts of a set, key models decide** (after the table). Layout 13
+  adds typo suggestions under its reading from a jamo 4-gram model (layouts/13-bada.md §5); it reads
+  its keys one way only. Layout 15 uses the same model to choose among readings when none is a
+  known word.
 
   | Reading | Score |
   |---|---|
@@ -497,10 +509,41 @@ the output.
   candidates. Layouts 15, 18 and 19 rank their own other readings beside this
   ([15](layouts/15-bada-roman.md), [18](layouts/18-korean-roman.md), [19](layouts/19-kana-korean.md)). A
   soft negative word of the user's loses 60; a strong one is left out (§8).
+
+  **In a set, key models compare the layouts** (`engine/src/keymodel.rs`; JIS Moonshot's key model,
+  one per layout). `engine/data/key-models.bin` (3.6 MB, built into the engine;
+  `engine/tools/build_keymodel.py`) has, for each of 0, 10–16, 18, 20 and 21, a 4-gram model of the
+  keys pressed when its language is typed on it: the 48 keys, the same with Shift, and the word
+  boundary (Witten–Bell smoothed). When two or more enabled layouts with a model read the staged
+  keys, each scores them as the start of a word that ends at the last key or (counted 0.02) goes
+  on, and the scores become shares that sum to one. A key typed with ⌥ is the same character in
+  every layout, so the models don't see it. Each such layout's rows then move together, keeping
+  their order and the gaps between them: its first row to **80**, **85** if the table knows the
+  reading as a word (85 and up), **40 more** for a word of the user's dictionary; times the
+  layout's weight; plus **5 × ln(share)**, at most −60. So the table orders one layout's rows, and
+  the keys say which layout was meant: `the` shows beside bada, not 판; `kareha` is 彼は and
+  `hanguk` 한국 with 15 and 21. A layout alone, a layout without a model (19, 150, 151) and any
+  layout beside only such layouts keep the table's scores.
+
+  **A word and its particle** (JIS Moonshot §5.3; `engine/src/particles.rs` has its lists). With
+  QWERTY in a set, one staged run may be an English word and then a particle typed on another
+  layout of the set: a Korean particle or ending on 10–14 or 16 (Claude에, report를, client에서;
+  two or three stacked: client들에게), or a Japanese one on 20 or 21 after a capitalised name
+  (GitHubで). The start is a known English word or a capitalised name, and the whole isn't an
+  English word itself (`then` stays `then`). The key models score it: the start under QWERTY's,
+  the particle under its layout's, each as a word that ends, times 0.5 after a known word and 0.05
+  after a name; it ranks as a known word with that share among the readings of all the keys. A
+  particle of one key after a name is offered, not shown (Claude and K: `Claudek`, then Claudeの).
+  Not built from Moonshot: staged phrases (§5.5 there), and 15 and 18, whose letters are QWERTY's.
+
+  On the typing robot's layout sets ([robot.md](robot.md#layout-sets): every set of two or three
+  production layouts of different languages) the first row is right 93.9% of the time, and each
+  layout by itself gives 94.3%. The table alone gave 82.3% (on the 37 sets there were before
+  layout 16).
 - HYPER+かな and MEH+かな both switch to the other mode: with one muhenkan layout and one henkan
   there is nothing else to go back to or cycle through. The user cycle order (§5.3) isn't in the
   settings window yet.
-- Default settings: henkan candidates = [13]; muhenkan layout 0; F6–F10 intercepted and swallowed,
+- Default settings: henkan candidates = [16] (bada plain; [13] before 2026-11-12, and settings already saved keep their candidates); muhenkan layout 0; F6–F10 intercepted and swallowed,
   nothing bound; profiles and script forms off; every weight 1; layout 15's romaji shortcuts on; Caps
   Lock toggle, ALL CAPS.
 - The web simulator (`/web`) runs the same engine and the same settings; what the page adds or
@@ -568,7 +611,7 @@ Support/org.pqrs/Karabiner-Elements/bin/karabiner_cli' --set-variables '{"bada_m
 
 Collected from above:
 
-1. §4.3 scoring of candidates without a trained model.
+1. §4.3 scoring of candidates without a key model (as built: their rule scores, §7.0).
 2. ~~§5.2 whether Bada is deterministic~~: deterministic (owner, 2026-11-08).
 3. §6.1 what "most recently used henkan" and MEH+かな's sources are: (a), (b) or (c).
 4. §6.2 半角/全角 with no selection in muhenkan.
@@ -585,12 +628,13 @@ script forms and F-key actions in `engine/src/engine.rs`.
 
 ### 11.1 Ranking
 
-A reading that is a known word (`engine/data/ja-words.txt`, JIS Moonshot's hand-written list; a
-kana-native word; or a Japanese word in the user's dictionary) scores above an unknown Korean
-composition; an unknown one below it; one with a stray ゛ ゜ or pending Latin letters low. So with
-13 and 21 enabled, `konnichiha` shows こんにちは and D H G R H V H B E M A H still shows 감사합니다.
-The scores are in §7.0's table. A word of the user's dictionary counts in whatever script it's
-written, hiragana, katakana or kanji (§11.2).
+A reading is a known word when it's in `engine/data/ja-words.txt` (JIS Moonshot's hand-written
+list), a kana-native word, or a Japanese word in the user's dictionary; one with a stray ゛ ゜ or
+pending Latin letters scores low. The scores are in §7.0's table: they order a Japanese layout's
+rows, and rank it beside a layout that has no key model. Beside the other layouts the key models
+decide (§7.0): with 13 and 21 enabled, `konnichiha` shows こんにちは and D H G R H V H B E M A H
+still shows 감사합니다. A word of the user's dictionary counts in whatever script it's written,
+hiragana, katakana or kanji (§11.2).
 
 ### 11.2 Kanji conversion
 

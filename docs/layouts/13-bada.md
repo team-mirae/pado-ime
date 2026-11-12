@@ -48,7 +48,8 @@ not where its keys are: KTS habits don't carry over key for key.
 | **3-set (세벌식)** | Final-only keys (J K L ; ¥ and their ⇧ double finals) that never move to the next syllable. Every compound vowel on a key of its own. | 3-set's sides (initials right, finals left there). A final-only key for every final. |
 | **JIS kana** | All 48 kana-space keys carry letters, the number row included, and ⇧ on number and symbol keys is kept for digits and symbols, as JIS kana keeps it for its punctuation. | Anything kana-specific. |
 
-Bada is the default henkan layout. Its usual companions are QWERTY and kana
+Bada was the default henkan layout until bada plain ([16](16-bada-plain.md)), a candidate to replace
+it, became the default (owner, 2026-11-12). Its usual companions are QWERTY and kana
 ([QWERTY + bada + kana](combinations.md#qwerty--bada--kana)) or romaji
 ([bada + romaji](combinations.md#bada--romaji)).
 

@@ -136,7 +136,7 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 const LAYOUTS = { 0: "QWERTY", 10: "Korean (2-set)", 11: "Korean (legacy-korean)", 12: "Korean (legacy-moonshot)", 13: "Korean (bada)",
-  14: "Korean (3-set JIS)", 18: "Korean (Roman)", 19: "Korean (Kana)", 20: "Japanese (Kana)", 21: "Japanese (Romaji)", 150: "Symbols", 151: "Unicode" };
+  14: "Korean (3-set JIS)", 15: "Korean (bada roman)", 16: "Korean (bada plain)", 18: "Korean (Roman)", 19: "Korean (Kana)", 20: "Japanese (Kana)", 21: "Japanese (Romaji)", 150: "Symbols", 151: "Unicode" };
 const ACTIONS = { "prediction-1": "1st prediction", raw: "Raw jamo", hanja: "Hanja", "qwerty-fullwidth": "QWERTY, full-width",
   "qwerty-halfwidth": "QWERTY, half-width", hiragana: "Hiragana", katakana: "Katakana", "halfwidth-katakana": "Half-width katakana",
   "fullwidth-latin": "Full-width Latin", "halfwidth-latin": "Half-width Latin" };
