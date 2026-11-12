@@ -78,7 +78,7 @@ dependencies = [
 [[package]]
 name = "shout-ime"
 version = "0.1.0"
-source = "git+https://github.com/team-mirae/bada-compatible?rev=f00ca67#f00ca6725931fc93d304dc46382c2628ff4c188e"
+source = "git+https://github.com/team-mirae/bada-compatible?rev=ab11c05#ab11c059d6fa0fb883a6f3c08c8b3ca129ab15ab"
 dependencies = [
  "serde",
  "serde_json",
